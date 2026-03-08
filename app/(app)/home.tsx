@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import api from '../../src/lib/api';
 import { getStoredUser } from '../../src/lib/auth';
-import { BG, CARD, BORDER, TEXT, SUB, MUTED, GOLD, SUCCESS, WARNING, ERROR, BLUE, fmtMoney, fmtDate } from '../../src/lib/format';
+import { BG, CARD, CARD_ELEVATED, BORDER, TEXT, SUB, MUTED, GOLD, SUCCESS, WARNING, ERROR, BLUE, fmtMoney, fmtDate } from '../../src/lib/format';
 
 const LOCAL_LOGO = require('../../assets/logo.png');
 
@@ -298,8 +298,8 @@ const styles = StyleSheet.create({
   logo: { width: 160, height: 24, marginBottom: 6 },
   welcomeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   welcomeText: { fontSize: 12, color: '#9CA3AF' },
-  tierBadge: { backgroundColor: '#1a1a1a', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
-  tierText:  { fontSize: 10, fontWeight: '700', color: '#fff' },
+  tierBadge: { backgroundColor: CARD_ELEVATED, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
+  tierText:  { fontSize: 10, fontWeight: '700', color: TEXT },
   discountBadge: { backgroundColor: '#fef3c7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
   discountText:  { fontSize: 10, fontWeight: '700', color: '#92400e' },
   // Gold circle avatar
@@ -348,8 +348,8 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 10, fontWeight: '700' },
 
   // Booking refs
-  bookingRef:      { fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'], color: '#fff' },
-  lightBookingRef: { fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'], color: '#fff' },
+  bookingRef:      { fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'], color: TEXT },
+  lightBookingRef: { fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'], color: TEXT },
 
   // Route
   routeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

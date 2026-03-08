@@ -50,6 +50,14 @@ export default function ProfileScreen() {
 
   const set = (k: string) => (v: string) => setForm(f => ({ ...f, [k]: v }));
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={GOLD} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
       <View style={styles.header}>

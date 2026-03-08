@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
@@ -29,11 +29,19 @@ export default function HomeScreen() {
 
   const next = bookings[0];
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={GOLD} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
       <ScrollView
         style={{ flex: 1 }}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={GOLD} />}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} tintColor={GOLD} />}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
       >
         {/* Greeting */}

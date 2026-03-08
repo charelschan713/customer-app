@@ -55,6 +55,13 @@ export async function getStoredUser() {
 }
 
 export async function isLoggedIn() {
-  const token = await SecureStore.getItemAsync('token');
-  return !!token;
+  try {
+    const token = await Promise.race([
+      SecureStore.getItemAsync('token'),
+      new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+    ]);
+    return !!token;
+  } catch {
+    return false;
+  }
 }

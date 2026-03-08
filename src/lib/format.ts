@@ -1,4 +1,4 @@
-export const GOLD = '#c8a96b';
+export const GOLD = process.env.EXPO_PUBLIC_PRIMARY_COLOR ?? '#c8a96b';
 export const BG   = '#0d0f14';
 export const CARD = '#13161d';
 export const BORDER = 'rgba(200,169,107,0.15)';

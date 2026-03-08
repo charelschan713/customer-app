@@ -1,0 +1,36 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    # Sync certificates and provisioning profiles
+    get_certificates(
+      username: "asconcierges@gmail.com",
+      team_id: ENV["FASTLANE_TEAM_ID"],
+      output_path: "./fastlane/certs"
+    )
+    get_provisioning_profile(
+      app_identifier: "com.aschauffeured.customer",
+      username: "asconcierges@gmail.com",
+      team_id: ENV["FASTLANE_TEAM_ID"],
+      output_path: "./fastlane/profiles"
+    )
+    # Build
+    build_app(
+      workspace: "ios/ASChauffeured.xcworkspace",
+      scheme: "ASChauffeured",
+      configuration: "Release",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          "com.aschauffeured.customer" => "ASChauffeured AppStore"
+        }
+      }
+    )
+    # Upload to TestFlight
+    upload_to_testflight(
+      username: "asconcierges@gmail.com",
+      skip_waiting_for_build_processing: true
+    )
+  end
+end

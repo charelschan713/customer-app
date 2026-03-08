@@ -7,22 +7,28 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://chauffeur-saas-production.up.railway.app",
         "EXPO_PUBLIC_TENANT_SLUG": "aschauffeured",
-        "EXPO_PUBLIC_STRIPE_PK": "pk_test_placeholder"
+        "EXPO_PUBLIC_APP_NAME": "ASChauffeured",
+        "EXPO_PUBLIC_PRIMARY_COLOR": "#c8a96b",
+        "EXPO_PUBLIC_STRIPE_PK": "pk_test_51PuUzlB3pdczuXMq89dEizofOSKDjaMOiJmnn8PXHvqA9pLrNeFRXqdzImtLUC07r1JYOYT581R33wr7sEosE3j100Z67sRtjn"
       }
     },
-    "preview": {
+    "preview-aschauffeured": {
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://chauffeur-saas-production.up.railway.app",
         "EXPO_PUBLIC_TENANT_SLUG": "aschauffeured",
-        "EXPO_PUBLIC_STRIPE_PK": "pk_test_placeholder"
+        "EXPO_PUBLIC_APP_NAME": "ASChauffeured",
+        "EXPO_PUBLIC_PRIMARY_COLOR": "#c8a96b",
+        "EXPO_PUBLIC_STRIPE_PK": "pk_test_51PuUzlB3pdczuXMq89dEizofOSKDjaMOiJmnn8PXHvqA9pLrNeFRXqdzImtLUC07r1JYOYT581R33wr7sEosE3j100Z67sRtjn"
       }
     },
-    "production": {
+    "production-aschauffeured": {
       "env": {
         "EXPO_PUBLIC_API_URL": "https://chauffeur-saas-production.up.railway.app",
         "EXPO_PUBLIC_TENANT_SLUG": "aschauffeured",
-        "EXPO_PUBLIC_STRIPE_PK": "pk_live_placeholder"
+        "EXPO_PUBLIC_APP_NAME": "ASChauffeured",
+        "EXPO_PUBLIC_PRIMARY_COLOR": "#c8a96b",
+        "EXPO_PUBLIC_STRIPE_PK": "pk_test_51PuUzlB3pdczuXMq89dEizofOSKDjaMOiJmnn8PXHvqA9pLrNeFRXqdzImtLUC07r1JYOYT581R33wr7sEosE3j100Z67sRtjn"
       }
     }
   }

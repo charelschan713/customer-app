@@ -2,10 +2,17 @@
   "expo": {
     "name": "ASChauffeured",
     "slug": "customer-app",
+    "runtimeVersion": { "policy": "appVersion" },
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "aschauffeured",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0d0f14"
+    },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
@@ -15,7 +22,10 @@
       }
     },
     "android": {
-      "adaptiveIcon": { "backgroundColor": "#0d0f14" },
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0d0f14"
+      },
       "package": "com.aschauffeured.customer"
     },
     "plugins": [

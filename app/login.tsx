@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView,
+  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView, Image,
 } from 'react-native';
+
+const LOGO_URL = process.env.EXPO_PUBLIC_LOGO_URL ?? 'https://erdsjplilnmrcltlecra.supabase.co/storage/v1/object/public/tenant-assets/aschauffeured/logo.png';
 import { router } from 'expo-router';
 import { loginWithEmail, loginWithOtp } from '../src/lib/auth';
 import { registerPushToken } from '../src/lib/notifications';
@@ -62,7 +64,7 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>ASCHAUFFEURED</Text>
+          <Image source={{ uri: LOGO_URL }} style={styles.logo} resizeMode="contain" />
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>Sign in to your account</Text>
         </View>
@@ -146,7 +148,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   inner: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 80, paddingBottom: 40 },
   header: { alignItems: 'center', marginBottom: 40 },
-  logo: { fontSize: 20, color: GOLD, fontWeight: '700', marginBottom: 16, letterSpacing: 4, textTransform: 'uppercase' },
+  logo: { width: 280, height: 60, marginBottom: 16 },
   title: { fontSize: 28, fontWeight: '700', color: TEXT },
   subtitle: { fontSize: 15, color: MUTED, marginTop: 6 },
   tabs: { flexDirection: 'row', backgroundColor: CARD, borderRadius: 12, padding: 4, marginBottom: 24 },

@@ -9,9 +9,9 @@ import api, { TENANT_SLUG } from '../../../src/lib/api';
 import { BG, CARD, GOLD, BORDER, TEXT, MUTED, fmtMoney } from '../../../src/lib/format';
 
 const SERVICE_TYPES = [
-  { label: '✈️ Airport Transfer', value: 'AIRPORT_TRANSFER' },
-  { label: '🏙️ Point to Point', value: 'POINT_TO_POINT' },
-  { label: '🕐 Hourly Hire', value: 'HOURLY_HIRE' },
+  { label: 'Airport Transfer', value: 'AIRPORT_TRANSFER' },
+  { label: 'Point to Point', value: 'POINT_TO_POINT' },
+  { label: 'Hourly Hire', value: 'HOURLY_HIRE' },
 ];
 
 export default function BookScreen() {

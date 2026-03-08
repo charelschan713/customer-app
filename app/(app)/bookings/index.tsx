@@ -44,7 +44,7 @@ export default function BookingsScreen() {
 
         {!isLoading && bookings.length === 0 && (
           <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>🛣️</Text>
+            <Ionicons name="car-outline" size={52} color={MUTED + '66'} />
             <Text style={styles.emptyTitle}>No bookings yet</Text>
           </View>
         )}

@@ -269,7 +269,7 @@ export default function HomeScreen() {
         {/* Empty state */}
         {!isLoading && upcoming.length === 0 && past.length === 0 && (
           <View style={styles.empty}>
-            <Text style={{ fontSize: 40 }}>🛣️</Text>
+            <Ionicons name="car-outline" size={52} color={MUTED + '66'} />
             <Text style={styles.emptyTitle}>No trips yet</Text>
             <Text style={styles.emptySub}>Tap Book to get started</Text>
           </View>

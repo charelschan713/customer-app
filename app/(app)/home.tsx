@@ -38,9 +38,21 @@ export default function HomeScreen() {
       >
         {/* Greeting */}
         <View style={styles.greeting}>
-          <View>
+          <View style={{ gap: 4 }}>
             <Text style={styles.greetSub}>Good day,</Text>
-            <Text style={styles.greetName}>{user?.first_name ?? 'Welcome'} ✦</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <Text style={styles.greetName}>{user?.first_name ?? 'Welcome'}</Text>
+              {user?.tier && user.tier !== 'STANDARD' && (
+                <View style={[styles.badge, { backgroundColor: user.tier === 'VIP' ? GOLD : '#7c3aed' }]}>
+                  <Text style={styles.badgeText}>{user.tier}</Text>
+                </View>
+              )}
+              {user?.discount_rate > 0 && (
+                <View style={[styles.badge, { backgroundColor: '#1a3a1a', borderWidth: 1, borderColor: '#22c55e' }]}>
+                  <Text style={[styles.badgeText, { color: '#22c55e' }]}>{Number(user.discount_rate).toFixed(0)}% OFF</Text>
+                </View>
+              )}
+            </View>
           </View>
           <TouchableOpacity style={styles.bookBtn} onPress={() => router.push('/(app)/book')}>
             <Text style={styles.bookBtnText}>+ Book</Text>
@@ -136,6 +148,7 @@ const styles = StyleSheet.create({
   nextRef: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   nextRefText: { fontSize: 16, fontWeight: '700', color: TEXT, fontFamily: 'monospace' },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  badgeText: { fontSize: 11, fontWeight: '700', color: '#000', letterSpacing: 0.5 },
   badgeText: { fontSize: 11, fontWeight: '600' },
   nextTime: { fontSize: 13, color: MUTED },
   route: { gap: 8 },

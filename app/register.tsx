@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', marginBottom: 32 },
   back: { alignSelf: 'flex-start', marginBottom: 20 },
   backText: { color: GOLD, fontSize: 15, fontWeight: '500' },
-  logo: { width: 280, height: 60, marginBottom: 12 },
+  logo: { width: 320, height: 90, marginBottom: 16 },
   title: { fontSize: 26, fontWeight: '700', color: '#fff' },
   subtitle: { fontSize: 14, color: MUTED, marginTop: 4 },
   form: { gap: 14, marginBottom: 20 },

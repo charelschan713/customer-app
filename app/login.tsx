@@ -148,7 +148,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   inner: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 80, paddingBottom: 40 },
   header: { alignItems: 'center', marginBottom: 40 },
-  logo: { width: 280, height: 60, marginBottom: 16 },
+  logo: { width: 320, height: 90, marginBottom: 20 },
   title: { fontSize: 28, fontWeight: '700', color: TEXT },
   subtitle: { fontSize: 15, color: MUTED, marginTop: 6 },
   tabs: { flexDirection: 'row', backgroundColor: CARD, borderRadius: 12, padding: 4, marginBottom: 24 },

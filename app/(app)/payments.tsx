@@ -14,13 +14,13 @@ export default function PaymentsScreen() {
   const { data: methods = [], isLoading } = useQuery({
     queryKey: ['payment-methods'],
     queryFn: async () => {
-      const res = await api.get('/customer-portal/payments');
+      const res = await api.get('/customer-portal/payment-methods');
       return res.data?.data ?? res.data ?? [];
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/customer-portal/payments/${id}`),
+    mutationFn: (id: string) => api.delete(`/customer-portal/payment-methods/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['payment-methods'] }),
   });
 

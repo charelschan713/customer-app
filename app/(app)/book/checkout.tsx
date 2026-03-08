@@ -18,12 +18,13 @@ export default function CheckoutScreen() {
   const formData    = JSON.parse(form ?? '{}');
 
   const { createPaymentMethod } = useStripe();
-  const [user, setUser]     = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [user, setUser]           = useState<any>(null);
+  const [savedCards, setSavedCards] = useState<any[]>([]);
+  const [selectedCard, setSelectedCard] = useState<string | null>(null);
+  const [useNewCard, setUseNewCard]   = useState(false);
+  const [loading, setLoading]         = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
-  const [pax, setPax] = useState({
-    firstName: '', lastName: '', email: '', phone: '', notes: '',
-  });
+  const [pax, setPax] = useState({ firstName: '', lastName: '', email: '', phone: '', notes: '' });
 
   useEffect(() => {
     getStoredUser().then((u) => {
@@ -34,67 +35,85 @@ export default function CheckoutScreen() {
           firstName: u.first_name ?? '',
           lastName:  u.last_name  ?? '',
           email:     u.email      ?? '',
-          phone:     u.phone      ?? '',
         }));
+        // Fetch saved cards
+        api.get('/customer-portal/payment-methods').then(r => {
+          const cards = r.data?.data ?? r.data ?? [];
+          setSavedCards(cards);
+          if (cards.length > 0) {
+            const def = cards.find((c: any) => c.is_default) ?? cards[0];
+            setSelectedCard(def.stripe_payment_method_id);
+          } else {
+            setUseNewCard(true);
+          }
+        }).catch(() => setUseNewCard(true));
+      } else {
+        setUseNewCard(true);
       }
     });
   }, []);
 
   const set = (k: string) => (v: string) => setPax(p => ({ ...p, [k]: v }));
 
+  const buildPayload = (paymentMethodId?: string, setupIntentId?: string) => ({
+    quoteId: sessionId,
+    vehicleClassId: quoteResult.service_class_id,
+    totalPriceMinor: quoteResult.estimated_total_minor,
+    currency: quoteResult.currency ?? 'AUD',
+    passengerCount: formData.passengerCount ?? 1,
+    passengerFirstName: pax.firstName,
+    passengerLastName:  pax.lastName,
+    notes: pax.notes || undefined,
+    ...(paymentMethodId ? { paymentMethodId } : {}),
+    ...(setupIntentId   ? { setupIntentId }   : {}),
+  });
+
   const handlePay = async () => {
     if (!pax.firstName || !pax.email) {
       Alert.alert('Required', 'Please enter your name and email');
       return;
     }
-    if (!cardComplete) {
-      Alert.alert('Card', 'Please enter your card details');
-      return;
-    }
-
     setLoading(true);
     try {
-      // Create payment method
+      const isLoggedIn = !!user;
+
+      if (isLoggedIn && selectedCard && !useNewCard) {
+        // Pay with saved card
+        const res = await api.post('/customer-portal/bookings', buildPayload(selectedCard));
+        router.replace({ pathname: '/(app)/bookings/success', params: { ref: res.data.booking_reference ?? res.data.id } });
+        return;
+      }
+
+      // New card flow
+      if (!cardComplete) {
+        Alert.alert('Card', 'Please enter your card details');
+        setLoading(false);
+        return;
+      }
       const { paymentMethod, error } = await createPaymentMethod({
         paymentMethodType: 'Card',
         paymentMethodData: { billingDetails: { name: `${pax.firstName} ${pax.lastName}` } },
       });
-
       if (error || !paymentMethod) {
         Alert.alert('Card Error', error?.message ?? 'Card setup failed');
         setLoading(false);
         return;
       }
 
-      const token = await (await import('expo-secure-store')).getItemAsync('token');
-
-      if (token) {
-        // Logged-in checkout
-        const res = await api.post('/customer-portal/bookings', {
-          quote_session_id: sessionId,
-          car_type_id: quoteResult.car_type_id,
-          payment_method_id: paymentMethod.id,
-          passenger_first_name: pax.firstName,
-          passenger_last_name:  pax.lastName,
-          passenger_email:      pax.email,
-          passenger_phone:      pax.phone,
-          special_requests:     pax.notes,
-        });
-        router.replace({ pathname: '/(app)/bookings/success', params: { ref: res.data.booking_reference } });
+      if (isLoggedIn) {
+        const res = await api.post('/customer-portal/bookings', buildPayload(paymentMethod.id));
+        router.replace({ pathname: '/(app)/bookings/success', params: { ref: res.data.booking_reference ?? res.data.id } });
       } else {
-        // Guest checkout
         const res = await api.post('/customer-portal/guest/checkout', {
-          quote_session_id: sessionId,
-          car_type_id: quoteResult.car_type_id,
-          payment_method_id: paymentMethod.id,
-          first_name:   pax.firstName,
-          last_name:    pax.lastName,
-          email:        pax.email,
-          phone:        pax.phone,
-          special_requests: pax.notes,
-          tenant_slug:  TENANT_SLUG,
+          ...buildPayload(paymentMethod.id),
+          guestCheckout: true,
+          tenantSlug: TENANT_SLUG,
+          firstName: pax.firstName,
+          lastName:  pax.lastName,
+          email:     pax.email,
+          phone:     pax.phone,
         });
-        router.replace({ pathname: '/(app)/bookings/success', params: { ref: res.data.booking_reference } });
+        router.replace({ pathname: '/(app)/bookings/success', params: { ref: res.data.booking_reference ?? res.data.id } });
       }
     } catch (e: any) {
       Alert.alert('Booking Failed', e.response?.data?.message ?? 'Please try again');
@@ -102,6 +121,8 @@ export default function CheckoutScreen() {
       setLoading(false);
     }
   };
+
+  const totalFare = quoteResult.estimated_total_minor ?? 0;
 
   return (
     <StripeProvider publishableKey={STRIPE_PK}>
@@ -117,15 +138,13 @@ export default function CheckoutScreen() {
             {/* Summary */}
             <View style={styles.summary}>
               <Text style={styles.summaryLabel}>BOOKING SUMMARY</Text>
-              <Text style={styles.carName}>{quoteResult.car_type_name}</Text>
-              <Text style={styles.route} numberOfLines={2}>
-                {formData.pickup} → {formData.dropoff}
-              </Text>
+              <Text style={styles.carName}>{quoteResult.car_type_name ?? quoteResult.service_class_name}</Text>
+              <Text style={styles.route} numberOfLines={2}>{formData.pickup} → {formData.dropoff}</Text>
               <Text style={styles.pickup}>📅 {formData.date} {formData.time}</Text>
               <View style={styles.divider} />
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalVal}>{fmtMoney(quoteResult.estimated_total_minor, quoteResult.currency)}</Text>
+                <Text style={styles.totalVal}>{fmtMoney(totalFare, quoteResult.currency)}</Text>
               </View>
             </View>
 
@@ -143,23 +162,46 @@ export default function CheckoutScreen() {
             <TextInput style={[styles.input, { marginTop: 10 }]} value={pax.phone} onChangeText={set('phone')} placeholder="Phone" placeholderTextColor={MUTED} keyboardType="phone-pad" />
             <TextInput style={[styles.input, { marginTop: 10, minHeight: 80 }]} value={pax.notes} onChangeText={set('notes')} placeholder="Special requests (optional)" placeholderTextColor={MUTED} multiline />
 
-            {/* Card */}
+            {/* Payment */}
             <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Payment</Text>
-            <CardField
-              postalCodeEnabled={false}
-              style={styles.card}
-              cardStyle={{
-                backgroundColor: CARD,
-                textColor: TEXT,
-                placeholderColor: MUTED,
-                borderRadius: 12,
-              }}
-              onCardChange={(c) => setCardComplete(c.complete)}
-            />
+
+            {/* Saved cards */}
+            {savedCards.length > 0 && (
+              <View style={{ gap: 8, marginBottom: 12 }}>
+                {savedCards.map((c: any) => (
+                  <TouchableOpacity key={c.stripe_payment_method_id}
+                    onPress={() => { setSelectedCard(c.stripe_payment_method_id); setUseNewCard(false); }}
+                    style={[styles.cardOption, !useNewCard && selectedCard === c.stripe_payment_method_id && styles.cardOptionSelected]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.cardBrand}>{c.brand?.toUpperCase()} •••• {c.last4}</Text>
+                      <Text style={styles.cardExpiry}>Expires {c.exp_month}/{c.exp_year}</Text>
+                    </View>
+                    {!useNewCard && selectedCard === c.stripe_payment_method_id && (
+                      <View style={styles.radioSelected}><View style={styles.radioInner} /></View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  onPress={() => { setUseNewCard(true); setSelectedCard(null); }}
+                  style={[styles.cardOption, useNewCard && styles.cardOptionSelected]}>
+                  <Text style={{ color: TEXT, fontSize: 14 }}>+ Use a different card</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* New card field */}
+            {(savedCards.length === 0 || useNewCard) && (
+              <CardField
+                postalCodeEnabled={false}
+                style={styles.card}
+                cardStyle={{ backgroundColor: CARD, textColor: TEXT, placeholderColor: MUTED, borderRadius: 12 }}
+                onCardChange={(c) => setCardComplete(c.complete)}
+              />
+            )}
 
             <TouchableOpacity style={[styles.btn, loading && { opacity: 0.7 }]} onPress={handlePay} disabled={loading}>
               {loading ? <ActivityIndicator color="#000" /> : (
-                <Text style={styles.btnText}>Pay {fmtMoney(quoteResult.estimated_total_minor, quoteResult.currency)}</Text>
+                <Text style={styles.btnText}>Pay {fmtMoney(totalFare, quoteResult.currency)}</Text>
               )}
             </TouchableOpacity>
           </ScrollView>
@@ -185,6 +227,12 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 13, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
   row: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   input: { backgroundColor: CARD, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: TEXT, borderWidth: 1, borderColor: BORDER },
+  cardOption: { backgroundColor: CARD, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, flexDirection: 'row', alignItems: 'center' },
+  cardOptionSelected: { borderColor: GOLD, backgroundColor: `${GOLD}15` },
+  cardBrand: { fontSize: 15, fontWeight: '600', color: TEXT },
+  cardExpiry: { fontSize: 12, color: MUTED, marginTop: 2 },
+  radioSelected: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: GOLD, alignItems: 'center', justifyContent: 'center' },
+  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: GOLD },
   card: { height: 54, marginBottom: 4 },
   btn: { backgroundColor: GOLD, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
   btnText: { color: '#000', fontSize: 17, fontWeight: '700' },

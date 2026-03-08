@@ -36,9 +36,9 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#0d0f14', borderTopColor: 'rgba(200,169,107,0.15)', paddingBottom: 4 },
-        tabBarActiveTintColor: GOLD,
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.35)',
+        tabBarStyle: { backgroundColor: '#fff', borderTopColor: '#f0f0f0', paddingBottom: 4 },
+        tabBarActiveTintColor: '#1a1a1a',
+        tabBarInactiveTintColor: '#bbb',
       }}
     >
       <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} /> }} />

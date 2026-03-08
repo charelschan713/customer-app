@@ -68,16 +68,26 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
-        {/* Avatar */}
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {(profile?.first_name?.[0] ?? '?').toUpperCase()}
+      <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+        {/* Dark hero header — ASDriver style */}
+        <View style={{ backgroundColor: '#1a1a1a', borderRadius: 20, margin: 16, padding: 24, alignItems: 'center', gap: 8 }}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {(profile?.first_name?.[0] ?? '?').toUpperCase()}
+            </Text>
+          </View>
+          <Text style={{ fontSize: 22, fontWeight: '700', color: '#fff' }}>
+            {profile?.first_name} {profile?.last_name}
           </Text>
+          <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>{profile?.email}</Text>
+          {profile?.tier && profile.tier !== 'STANDARD' && (
+            <View style={{ backgroundColor: GOLD, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#000' }}>{profile.tier}</Text>
+            </View>
+          )}
         </View>
-        {!editing && (
-          <Text style={styles.name}>{profile?.first_name} {profile?.last_name}</Text>
-        )}
+
+        <View style={{ paddingHorizontal: 16 }}>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>PERSONAL DETAILS</Text>
@@ -97,6 +107,7 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -108,7 +119,7 @@ function Field({ label, value, onChange, editing, type }: any) {
       <Text style={{ fontSize: 11, color: MUTED, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</Text>
       {editing ? (
         <TextInput
-          style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: TEXT, borderWidth: 1, borderColor: BORDER }}
+          style={{ backgroundColor: '#f5f5f5', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: TEXT, borderWidth: 1, borderColor: BORDER }}
           value={value} onChangeText={onChange}
           keyboardType={type === 'email' ? 'email-address' : type === 'phone' ? 'phone-pad' : 'default'}
           autoCapitalize={type === 'email' ? 'none' : 'words'}
@@ -124,8 +135,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
   title: { fontSize: 26, fontWeight: '700', color: TEXT },
   editBtn: { color: GOLD, fontSize: 16, fontWeight: '600' },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(200,169,107,0.2)', borderWidth: 2, borderColor: GOLD, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 12 },
-  avatarText: { fontSize: 32, fontWeight: '700', color: GOLD },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  avatarText: { fontSize: 32, fontWeight: '700', color: '#fff' },
   name: { fontSize: 20, fontWeight: '700', color: TEXT, textAlign: 'center', marginBottom: 24 },
   card: { backgroundColor: CARD, borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 18, marginBottom: 16 },
   cardTitle: { fontSize: 10, color: GOLD, fontWeight: '700', letterSpacing: 2, marginBottom: 16 },

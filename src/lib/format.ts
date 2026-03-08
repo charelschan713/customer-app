@@ -1,9 +1,10 @@
-export const GOLD = process.env.EXPO_PUBLIC_PRIMARY_COLOR ?? '#c8a96b';
-export const BG   = '#0d0f14';
-export const CARD = '#13161d';
-export const BORDER = 'rgba(200,169,107,0.15)';
-export const TEXT  = '#ffffff';
-export const MUTED = 'rgba(255,255,255,0.45)';
+export const GOLD   = process.env.EXPO_PUBLIC_PRIMARY_COLOR ?? '#c8a96b';
+export const BG     = '#f5f5f5';
+export const CARD   = '#ffffff';
+export const BORDER = '#f0f0f0';
+export const TEXT   = '#1a1a1a';
+export const MUTED  = '#666666';
+export const DARK   = '#1a1a1a';
 
 export function fmtMoney(minor: number | string | null | undefined, currency = 'AUD') {
   const n = Number(minor ?? 0) / 100;

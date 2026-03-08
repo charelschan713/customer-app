@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, Text, ScrollView, TouchableOpacity, Image,
   StyleSheet, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/lib/api';
 import { getStoredUser } from '../../src/lib/auth';
 import { BG, CARD, DARK, TEXT, SUB, MUTED, BORDER, GOLD, fmtMoney, fmtDateShort } from '../../src/lib/format';
+
+// Must match MEMORY — transparent logo
+const LOCAL_LOGO = require('../../assets/logo.png');
 
 const STATUS_COLORS: Record<string, string> = {
   CONFIRMED:                     '#22c55e',
@@ -19,19 +23,42 @@ const STATUS_COLORS: Record<string, string> = {
   ASSIGNED:                      '#3b82f6',
 };
 
+const TIER_BG: Record<string, string> = {
+  VIP:      '#1a1a1a',
+  PLATINUM: '#7c3aed',
+  GOLD:     '#b45309',
+  SILVER:   '#374151',
+};
+
 export default function HomeScreen() {
   const [user, setUser] = useState<any>(null);
   useEffect(() => { getStoredUser().then(setUser); }, []);
 
-  const { data: bookings = [], isLoading, refetch } = useQuery({
-    queryKey: ['bookings', 'upcoming'],
+  const { data: profile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: async () => { const res = await api.get('/customer-portal/profile'); return res.data; },
+  });
+
+  const { data: allBookings = [], isLoading, refetch } = useQuery({
+    queryKey: ['bookings', 'home'],
     queryFn: async () => {
-      const res = await api.get('/customer-portal/bookings', { params: { upcoming: true, limit: 4 } });
+      const res = await api.get('/customer-portal/bookings', { params: { limit: 10 } });
       return res.data?.data ?? res.data ?? [];
     },
   });
 
-  const next = bookings[0];
+  // Split upcoming vs past
+  const upcoming = allBookings.filter((b: any) =>
+    !['COMPLETED', 'CANCELLED'].includes(b.operational_status)
+  );
+  const past = allBookings.filter((b: any) =>
+    ['COMPLETED', 'CANCELLED'].includes(b.operational_status)
+  );
+
+  const displayName = profile?.first_name ?? user?.first_name ?? 'Guest';
+  const tier = profile?.tier;
+  const discountRate = profile?.discount_rate;
+  const hasDiscount = discountRate && Number(discountRate) > 0;
 
   if (isLoading) {
     return (
@@ -43,16 +70,26 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ── Header ── */}
+      {/* ── Header — Logo + Welcome + Badges + Avatar ── */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hello, {user?.first_name ?? 'Guest'} 👋</Text>
-          <Text style={styles.subGreeting}>
-            {next ? '🚗 You have an upcoming trip' : '✅ No upcoming trips'}
-          </Text>
+        <View style={{ flex: 1 }}>
+          <Image source={LOCAL_LOGO} style={styles.logo} resizeMode="contain" />
+          <View style={styles.welcomeRow}>
+            <Text style={styles.welcomeText}>Welcome back, {displayName}</Text>
+            {tier && tier !== 'STANDARD' && (
+              <View style={[styles.tierBadge, { backgroundColor: TIER_BG[tier] ?? '#1a1a1a' }]}>
+                <Text style={styles.tierText}>{tier}</Text>
+              </View>
+            )}
+            {hasDiscount && (
+              <View style={styles.discountBadge}>
+                <Text style={styles.discountText}>{Number(discountRate).toFixed(0)}% OFF</Text>
+              </View>
+            )}
+          </View>
         </View>
-        <TouchableOpacity style={styles.bookBtn} onPress={() => router.push('/(app)/book')}>
-          <Text style={styles.bookBtnText}>+ Book</Text>
+        <TouchableOpacity style={styles.avatarBtn} onPress={() => router.push('/(app)/profile')}>
+          <Ionicons name="person-outline" size={20} color={TEXT} />
         </TouchableOpacity>
       </View>
 
@@ -60,100 +97,96 @@ export default function HomeScreen() {
         style={styles.scroll}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={DARK} />}
       >
-        {/* ── Membership badge ── */}
-        {(user?.tier && user.tier !== 'STANDARD') && (
+        {/* ── Upcoming trips ── */}
+        {upcoming.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.memberCard}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.memberLabel}>MEMBERSHIP</Text>
-                <Text style={styles.memberTier}>{user.tier}</Text>
-                {user.discount_rate > 0 && (
-                  <Text style={styles.memberDiscount}>{Number(user.discount_rate).toFixed(0)}% personal discount applied</Text>
-                )}
-              </View>
-              <View style={styles.memberBadge}>
-                <Text style={styles.memberBadgeText}>★</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* ── Current / next trip ── */}
-        {next && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🚗 Upcoming Trip</Text>
-            <TouchableOpacity
-              style={styles.activeJobCard}
-              onPress={() => router.push(`/(app)/bookings/${next.id}`)}
-              activeOpacity={0.85}
-            >
-              {/* Status badge */}
-              <View style={styles.jobHeader}>
-                <Text style={styles.bookingNumber}>#{next.booking_reference}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[next.operational_status] ?? '#888') + '25' }]}>
-                  <Text style={[styles.statusText, { color: STATUS_COLORS[next.operational_status] ?? '#888' }]}>
-                    {next.operational_status?.replace(/_/g, ' ')}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Route */}
-              <View style={styles.routeContainer}>
-                <View style={styles.routeRow}>
-                  <View style={[styles.routeDot, { backgroundColor: '#22c55e' }]} />
-                  <Text style={styles.routeText} numberOfLines={1}>{next.pickup_address_text}</Text>
-                </View>
-                {next.dropoff_address_text && (
-                  <View style={styles.routeRow}>
-                    <View style={[styles.routeDot, { backgroundColor: '#ef4444' }]} />
-                    <Text style={styles.routeText} numberOfLines={1}>{next.dropoff_address_text}</Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Footer */}
-              <View style={styles.jobFooter}>
-                <Text style={styles.dateTime}>📅 {fmtDateShort(next.pickup_at_utc)}</Text>
-                <Text style={styles.price}>{fmtMoney(next.total_price_minor, next.currency)}</Text>
-              </View>
-
-              <View style={styles.tapHint}>
-                <Text style={styles.tapHintText}>Tap to view details →</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* ── Pending jobs ── */}
-        {bookings.slice(1).length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📋 More Trips</Text>
-            {bookings.slice(1).map((b: any) => (
+            {upcoming.map((b: any, i: number) => (
               <TouchableOpacity
                 key={b.id}
-                style={styles.pendingCard}
+                style={styles.darkCard}
                 onPress={() => router.push(`/(app)/bookings/${b.id}`)}
                 activeOpacity={0.85}
               >
-                <View style={styles.jobHeader}>
-                  <Text style={[styles.bookingNumber, { color: TEXT }]}>#{b.booking_reference}</Text>
-                  <Text style={styles.vehicleClass}>{b.service_class_name ?? ''}</Text>
+                {/* Card header */}
+                <View style={styles.cardTop}>
+                  <Text style={styles.refDark}>{b.booking_reference}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[b.operational_status] ?? '#888') + '30' }]}>
+                    <Text style={[styles.statusText, { color: STATUS_COLORS[b.operational_status] ?? '#888' }]}>
+                      {b.operational_status?.replace(/_/g, ' ')}
+                    </Text>
+                  </View>
                 </View>
+
+                {/* Route */}
                 <View style={styles.routeContainer}>
                   <View style={styles.routeRow}>
                     <View style={[styles.routeDot, { backgroundColor: '#22c55e' }]} />
-                    <Text style={[styles.routeText, { color: SUB }]} numberOfLines={1}>{b.pickup_address_text}</Text>
+                    <Text style={styles.routeTextDark} numberOfLines={1}>{b.pickup_address_text}</Text>
                   </View>
                   {b.dropoff_address_text && (
                     <View style={styles.routeRow}>
                       <View style={[styles.routeDot, { backgroundColor: '#ef4444' }]} />
-                      <Text style={[styles.routeText, { color: SUB }]} numberOfLines={1}>{b.dropoff_address_text}</Text>
+                      <Text style={styles.routeTextDark} numberOfLines={1}>{b.dropoff_address_text}</Text>
                     </View>
                   )}
                 </View>
-                <View style={styles.jobFooter}>
-                  <Text style={[styles.dateTime, { color: SUB }]}>📅 {fmtDateShort(b.pickup_at_utc)}</Text>
-                  <Text style={[styles.price]}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
+
+                {/* Footer */}
+                <View style={styles.cardFooter}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="time-outline" size={12} color="rgba(255,255,255,0.4)" />
+                    <Text style={styles.dateDark}>{fmtDateShort(b.pickup_at_utc)}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Text style={styles.priceDark}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
+                    <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.4)" />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* ── Past trips ── */}
+        {past.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>PAST TRIPS</Text>
+            {past.map((b: any) => (
+              <TouchableOpacity
+                key={b.id}
+                style={styles.lightCard}
+                onPress={() => router.push(`/(app)/bookings/${b.id}`)}
+                activeOpacity={0.85}
+              >
+                <View style={styles.cardTop}>
+                  <Text style={styles.refLight}>{b.booking_reference}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[b.operational_status] ?? '#888') + '20' }]}>
+                    <Text style={[styles.statusText, { color: STATUS_COLORS[b.operational_status] ?? '#888' }]}>
+                      {b.operational_status?.replace(/_/g, ' ')}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.routeContainer}>
+                  <View style={styles.routeRow}>
+                    <View style={[styles.routeDot, { backgroundColor: '#22c55e' }]} />
+                    <Text style={styles.routeTextLight} numberOfLines={1}>{b.pickup_address_text}</Text>
+                  </View>
+                  {b.dropoff_address_text && (
+                    <View style={styles.routeRow}>
+                      <View style={[styles.routeDot, { backgroundColor: '#ef4444' }]} />
+                      <Text style={styles.routeTextLight} numberOfLines={1}>{b.dropoff_address_text}</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.cardFooter}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="time-outline" size={12} color={MUTED} />
+                    <Text style={styles.dateLight}>{fmtDateShort(b.pickup_at_utc)}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Text style={styles.priceLight}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
+                    <Ionicons name="chevron-forward" size={14} color={MUTED} />
+                  </View>
                 </View>
               </TouchableOpacity>
             ))}
@@ -161,18 +194,15 @@ export default function HomeScreen() {
         )}
 
         {/* ── Empty state ── */}
-        {!isLoading && bookings.length === 0 && (
+        {!isLoading && allBookings.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🛣️</Text>
-            <Text style={styles.emptyTitle}>No upcoming trips</Text>
-            <Text style={styles.emptySubtitle}>Book your next luxury ride below</Text>
-            <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(app)/book')} activeOpacity={0.85}>
-              <Text style={styles.emptyBtnText}>Book a Ride</Text>
-            </TouchableOpacity>
+            <Text style={styles.emptyTitle}>No trips yet</Text>
+            <Text style={styles.emptySubtitle}>Tap + to book your first luxury ride</Text>
           </View>
         )}
 
-        <View style={{ height: 20 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -181,100 +211,75 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
 
-  // ── Header (1:1 ASDriver) ──
+  // ── Header ──
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 10,
     backgroundColor: CARD,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
+    borderBottomWidth: 1, borderBottomColor: BORDER,
   },
-  greeting:    { fontSize: 18, fontWeight: '700', color: TEXT },
-  subGreeting: { fontSize: 13, color: SUB, marginTop: 2 },
-  bookBtn: {
-    backgroundColor: DARK,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+  logo: { width: 160, height: 28 },
+  welcomeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' },
+  welcomeText: { fontSize: 13, color: SUB },
+  tierBadge: {
+    paddingHorizontal: 8, paddingVertical: 3,
     borderRadius: 20,
   },
-  bookBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  tierText: { fontSize: 11, fontWeight: '700', color: '#fff' },
+  discountBadge: {
+    paddingHorizontal: 8, paddingVertical: 3,
+    borderRadius: 20, backgroundColor: '#fef3c7',
+  },
+  discountText: { fontSize: 11, fontWeight: '700', color: '#92400e' },
+  avatarBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center', justifyContent: 'center',
+    marginLeft: 10,
+  },
 
   scroll: { flex: 1 },
-  section: { padding: 16 },
+  section: { padding: 16, gap: 12 },
+  sectionTitle: {
+    fontSize: 12, fontWeight: '700', color: MUTED,
+    letterSpacing: 1.5, textTransform: 'uppercase',
+    marginBottom: 4,
+  },
 
-  // ── Section title (1:1 ASDriver) ──
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: TEXT, marginBottom: 12 },
-
-  // ── Membership card ──
-  memberCard: {
+  // ── Dark card (upcoming) ──
+  darkCard: {
     backgroundColor: DARK,
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderRadius: 16, padding: 16, gap: 12,
   },
-  memberLabel:    { fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: '700', letterSpacing: 2, marginBottom: 4 },
-  memberTier:     { fontSize: 20, fontWeight: '700', color: GOLD },
-  memberDiscount: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
-  memberBadge: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: GOLD + '25', alignItems: 'center', justifyContent: 'center',
-  },
-  memberBadgeText: { fontSize: 22, color: GOLD },
-
-  // ── Active/upcoming job card (1:1 ASDriver activeJobCard — dark) ──
-  activeJobCard: {
-    backgroundColor: DARK,
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
-  },
-  jobHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  bookingNumber: { fontSize: 15, fontWeight: '700', color: '#fff', fontFamily: 'monospace' },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  statusText:  { fontSize: 11, fontWeight: '600' },
-  vehicleClass: { fontSize: 12, color: MUTED, fontWeight: '600' },
+  cardTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  refDark:    { fontSize: 14, fontWeight: '700', color: '#fff', fontFamily: 'monospace' },
+  statusBadge:{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  statusText: { fontSize: 11, fontWeight: '600' },
 
   routeContainer: { gap: 8 },
-  routeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  routeDot: { width: 8, height: 8, borderRadius: 4, marginTop: 4, flexShrink: 0 },
-  routeText: { flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 18 },
+  routeRow:       { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  routeDot:       { width: 8, height: 8, borderRadius: 4, marginTop: 4, flexShrink: 0 },
+  routeTextDark:  { flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 18 },
 
-  jobFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dateTime: { fontSize: 12, color: 'rgba(255,255,255,0.5)' },
-  price: { fontSize: 18, fontWeight: '700', color: GOLD },  // gold replaces ASDriver green
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  dateDark:   { fontSize: 12, color: 'rgba(255,255,255,0.4)' },
+  priceDark:  { fontSize: 17, fontWeight: '700', color: GOLD },
 
-  tapHint: { alignItems: 'center' },
-  tapHintText: { fontSize: 12, color: 'rgba(255,255,255,0.4)' },
-
-  // ── Pending / secondary trip card (1:1 ASDriver pendingCard — white) ──
-  pendingCard: {
+  // ── Light card (past) ──
+  lightCard: {
     backgroundColor: CARD,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderRadius: 16, padding: 16, gap: 10,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
   },
+  refLight:        { fontSize: 14, fontWeight: '700', color: TEXT, fontFamily: 'monospace' },
+  routeTextLight:  { flex: 1, fontSize: 13, color: SUB, lineHeight: 18 },
+  dateLight:       { fontSize: 12, color: MUTED },
+  priceLight:      { fontSize: 16, fontWeight: '700', color: TEXT },
 
   // ── Empty state ──
-  emptyState: { alignItems: 'center', paddingVertical: 80, gap: 12 },
+  emptyState:    { alignItems: 'center', paddingVertical: 80, gap: 12 },
   emptyEmoji:    { fontSize: 48 },
   emptyTitle:    { fontSize: 18, fontWeight: '700', color: TEXT },
   emptySubtitle: { fontSize: 14, color: SUB, textAlign: 'center', paddingHorizontal: 40 },
-  emptyBtn: {
-    backgroundColor: DARK,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    marginTop: 8,
-  },
-  emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });

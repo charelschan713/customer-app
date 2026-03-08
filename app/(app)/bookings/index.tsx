@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, A
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../../../src/lib/api';
 import { BG, CARD, DARK, TEXT, SUB, MUTED, BORDER, GOLD, fmtMoney, fmtDateShort } from '../../../src/lib/format';
 
@@ -85,8 +86,14 @@ export default function BookingsScreen() {
 
               {/* Footer */}
               <View style={styles.cardFooter}>
-                <Text style={styles.date}>📅 {fmtDateShort(b.pickup_at_utc)}</Text>
-                <Text style={styles.amount}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="time-outline" size={12} color={MUTED} />
+                  <Text style={styles.date}>{fmtDateShort(b.pickup_at_utc)}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={styles.amount}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
+                  <Ionicons name="chevron-forward" size={14} color={MUTED} />
+                </View>
               </View>
             </TouchableOpacity>
           );

@@ -83,6 +83,8 @@ export default function AppLayout() {
           tabBarIcon: ({ focused, size }) => (
             <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
           ),
+          // Tab bar hidden on book screen — matches web /quote (no bottom nav)
+          tabBarStyle: { display: 'none' }, 
         }}
       />
       <Tabs.Screen

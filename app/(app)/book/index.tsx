@@ -403,10 +403,18 @@ export default function BookScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/* Header — "← Get a Quote" (1:1 web portal — no bottom nav on this screen) */}
+      <View style={styles.bookHeader}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={20} color={TEXT} />
+        </TouchableOpacity>
+        <Text style={styles.bookHeaderTitle}>Get a Quote</Text>
+        <View style={{ width: 36 }} />
+      </View>
+
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
-        {/* Title */}
-        <Text style={styles.pageTitle}>Book a Ride</Text>
+        {/* No pageTitle — header handles it */}
 
         {/* Auto-discount banner */}
         {autoDiscount && (
@@ -750,6 +758,11 @@ const styles = StyleSheet.create({
   content: { padding: 16 },
 
   pageTitle: { fontSize: 28, fontWeight: '700', color: TEXT, marginBottom: 16 },
+
+  // Book header (1:1 web "← Get a Quote")
+  bookHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: BORDER },
+  backBtn:         { width: 36, height: 36, borderRadius: 18, backgroundColor: BORDER + '60', alignItems: 'center', justifyContent: 'center' },
+  bookHeaderTitle: { fontSize: 17, fontWeight: '600', color: TEXT },
   sectionLabel: { fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 2, textAlign: 'center', marginBottom: 12 },
 
   // Auto-discount banner

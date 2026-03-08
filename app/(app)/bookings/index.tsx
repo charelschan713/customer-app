@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   route: { gap: 6 },
   routeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dot: { width: 7, height: 7, borderRadius: 4 },
-  addr: { flex: 1, fontSize: 13, color: '#666' },
+  addr: { flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.65)' },
   footer: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: BORDER, paddingTop: 10 },
   vehicle: { fontSize: 13, color: MUTED },
   amount: { fontSize: 16, fontWeight: '700', color: GOLD },

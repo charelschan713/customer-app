@@ -1,17 +1,23 @@
-// ── Design tokens — 1:1 ASDriver dark navy theme ──
-export const BG      = '#131829';   // page background (dark navy)
-export const CARD    = '#1e2437';   // card background
-export const CARD2   = '#252b3d';   // elevated card / inner card
-export const TABBAR  = '#1a2035';   // tab bar background
-export const TEXT    = '#ffffff';   // primary text
-export const SUB     = 'rgba(255,255,255,0.60)';  // secondary text
-export const MUTED   = 'rgba(255,255,255,0.35)';  // muted text
-export const BORDER  = 'rgba(255,255,255,0.08)';  // subtle border
-export const GOLD    = '#c8a96b';   // brand accent (booking refs, active tab, prices)
-export const INPUT   = 'rgba(255,255,255,0.06)';  // input background
-export const INPUT_BORDER = 'rgba(255,255,255,0.12)'; // input border
-export const DARK    = '#1a1a1a';   // not used in dark theme
-export const SEPARATOR = 'rgba(255,255,255,0.07)'; // list separator
+// ── Design tokens — 1:1 ASDriverNative (Theme.swift exact values) ──
+export const BG      = '#1A1A2E';   // Color.brandDark
+export const CARD    = '#222236';   // Color.brandCard
+export const CARD_ELEVATED = '#16162A'; // Color.brandDarkElevated
+export const BORDER  = '#333355';   // Color.brandCardBorder
+export const TEXT    = '#FFFFFF';   // white
+export const SUB     = '#9CA3AF';   // Color.brandTextSecondary
+export const MUTED   = '#9CA3AF';   // same
+export const GOLD    = '#C8A870';   // Color.brandGold
+export const SUCCESS = '#22C55E';   // Color.brandSuccess
+export const WARNING = '#F59E0B';   // Color.brandWarning
+export const ERROR   = '#EF4444';   // Color.brandError
+export const BLUE    = '#3B82F6';   // Color.brandBlue
+export const PURPLE  = '#8B5CF6';   // Color.brandPurple
+
+// ── These keep existing API compat ──
+export const DARK       = '#1A1A2E';
+export const INPUT      = 'rgba(255,255,255,0.06)';
+export const INPUT_BORDER = '#333355';
+export const SEPARATOR  = '#333355';
 
 export function fmtMoney(minor: number | string | null | undefined, currency = 'AUD') {
   const n = Number(minor ?? 0) / 100;

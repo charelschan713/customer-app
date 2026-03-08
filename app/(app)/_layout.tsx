@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { Tabs, router } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import { useQueryClient } from '@tanstack/react-query';
-import { BG, TABBAR, GOLD, MUTED } from '../../src/lib/format';
+import { router } from 'expo-router';
+import { BG, GOLD, SUB } from '../../src/lib/format';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -14,22 +14,9 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// ── Gold floating center "+" button — 1:1 ASDriver style ──
-function BookButton() {
-  return (
-    <TouchableOpacity
-      style={styles.bookBtn}
-      onPress={() => router.push('/(app)/book')}
-      activeOpacity={0.8}
-    >
-      <Ionicons name="add" size={28} color="#fff" />
-    </TouchableOpacity>
-  );
-}
-
 export default function AppLayout() {
   const queryClient = useQueryClient();
-  const notifRef   = useRef<any>();
+  const notifRef    = useRef<any>();
   const responseRef = useRef<any>();
 
   useEffect(() => {
@@ -50,82 +37,64 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        // 1:1 ASDriver tab bar — dark with pill-shaped active
+        // 1:1 ASDriverNative: .tint(.brandGold), dark tab bar
         tabBarStyle: {
-          backgroundColor: TABBAR,
-          borderTopWidth: 0,
-          height: 70,
-          paddingBottom: 8,
-          paddingTop: 6,
-          marginHorizontal: 16,
-          marginBottom: 16,
-          borderRadius: 24,
-          position: 'absolute',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.3,
-          shadowRadius: 12,
-          elevation: 10,
+          backgroundColor: '#1A1A2E',
+          borderTopColor: '#333355',
+          borderTopWidth: 0.5,
+          paddingBottom: 4,
         },
-        tabBarActiveTintColor: GOLD,
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.4)',
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginTop: 2 },
-        tabBarBackground: () => null,
+        tabBarActiveTintColor: GOLD,       // .tint(.brandGold)
+        tabBarInactiveTintColor: '#6B7280',
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+          tabBarIcon: ({ focused, size }) => (
+            <Ionicons name={focused ? 'house.fill' as any : 'home-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
+          ),
         }}
       />
       <Tabs.Screen
         name="bookings"
         options={{
-          title: 'Bookings',
-          tabBarIcon: ({ color, size }) => <Ionicons name="list-outline" size={size} color={color} />,
+          title: 'Jobs',
+          tabBarIcon: ({ focused, size }) => (
+            <Ionicons name={focused ? 'list-circle' : 'list-circle-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
+          ),
         }}
       />
       <Tabs.Screen
         name="book"
         options={{
-          title: '',
-          tabBarButton: () => <BookButton />,
+          title: 'Book',
+          tabBarIcon: ({ focused, size }) => (
+            <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
+          ),
         }}
       />
       <Tabs.Screen
         name="invoices"
         options={{
           title: 'Invoices',
-          tabBarIcon: ({ color, size }) => <Ionicons name="receipt-outline" size={size} color={color} />,
+          tabBarIcon: ({ focused, size }) => (
+            <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'More',
-          tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal" size={size} color={color} />,
+          tabBarIcon: ({ focused, size }) => (
+            <Ionicons name={focused ? 'ellipsis-horizontal-circle' : 'ellipsis-horizontal-circle-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
+          ),
         }}
       />
       <Tabs.Screen name="payments" options={{ href: null }} />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  bookBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: GOLD,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 18,
-    shadowColor: GOLD,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-});

@@ -28,11 +28,15 @@ export function fmtMoney(minor: number | string | null | undefined, currency = '
   }).format(n);
 }
 
+// 1:1 ASDriverNative format: "Sun, 22 Feb · 4:00 pm"
 export function fmtDate(dt: string) {
-  return new Date(dt).toLocaleString('en-AU', {
-    weekday: 'short', day: '2-digit', month: 'short',
-    hour: '2-digit', minute: '2-digit', hour12: true,
-  });
+  if (!dt) return '';
+  const d = new Date(dt);
+  const weekday = d.toLocaleString('en-AU', { weekday: 'short', timeZone: 'Australia/Sydney' });
+  const day     = d.toLocaleString('en-AU', { day: 'numeric', timeZone: 'Australia/Sydney' });
+  const month   = d.toLocaleString('en-AU', { month: 'short', timeZone: 'Australia/Sydney' });
+  const time    = d.toLocaleString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Australia/Sydney' }).toLowerCase();
+  return `${weekday}, ${day} ${month} · ${time}`;
 }
 
 export function fmtDateShort(dt: string) {

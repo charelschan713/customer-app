@@ -45,8 +45,13 @@ export default function AppLayout() {
           backgroundColor: '#1A1A2E',
           borderTopColor: '#333355',
           borderTopWidth: 0.5,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 6,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
+        // Active tab gets a pill background highlight (ASDriverNative)
+        tabBarItemStyle: { borderRadius: 12 },
       }}
       screenListeners={{
         tabPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),

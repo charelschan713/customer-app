@@ -313,24 +313,30 @@ const styles = StyleSheet.create({
     marginTop: 8, marginBottom: 12,
   },
 
-  // ── Dark card (upcoming) — ASDriver brandDark #1A1A2E ──────────────────
+  // ── Upcoming card — CARD #222236, no border, subtle shadow (ASDriverNative)
   darkCard: {
-    backgroundColor: BG,           // #1A1A2E — same as page bg, use border for definition
-    borderRadius: 16,
+    backgroundColor: CARD,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: BORDER,           // #333355
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
 
-  // ── Light card (past) — ASDriver CARD colour, slightly lighter than bg ──
+  // ── Past card — slightly elevated (#16162A), same shadow
   lightCard: {
-    backgroundColor: CARD,          // #222236
-    borderRadius: 16,
+    backgroundColor: '#16162A',
+    borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 0.5,
-    borderColor: BORDER,             // #333355
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
 
   // Shared row helpers

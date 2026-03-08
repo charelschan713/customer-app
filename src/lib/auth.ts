@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import api, { TENANT_SLUG } from './api';
 
-async function fetchAndStoreUser(accessToken: string) {
+export async function fetchAndStoreUser(accessToken: string, customerId?: string) {
   await SecureStore.setItemAsync('token', accessToken);
   // Fetch full customer profile
   const profile = await api.get('/customer-portal/profile');

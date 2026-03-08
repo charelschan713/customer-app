@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, Alert, ActivityIndicator,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, TextInput, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/lib/api';
 import { logout } from '../../src/lib/auth';
-import { BG, CARD, DARK, TEXT, SUB, MUTED, BORDER, INPUT, INPUT_BORDER, GOLD } from '../../src/lib/format';
+import { BG, CARD, TEXT, SUB, MUTED, BORDER, SEPARATOR, GOLD } from '../../src/lib/format';
 
 export default function ProfileScreen() {
   const queryClient = useQueryClient();
@@ -36,7 +36,7 @@ export default function ProfileScreen() {
   });
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+    Alert.alert('Sign Out', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign Out', style: 'destructive', onPress: async () => { await logout(); router.replace('/login'); } },
     ]);
@@ -46,188 +46,168 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color={DARK} style={{ marginTop: 80 }} />
+      <SafeAreaView style={styles.safe}>
+        <ActivityIndicator color={GOLD} size="large" style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
   }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* ── Header (1:1 ASDriver) ── */}
-      <View style={styles.header}>
-        <Text style={styles.title}>My Profile</Text>
-        <TouchableOpacity onPress={() => editing ? updateMutation.mutate() : setEditing(true)}>
-          {updateMutation.isPending
-            ? <ActivityIndicator color={DARK} />
-            : <Text style={styles.editLink}>{editing ? 'Save' : 'Edit'}</Text>}
-        </TouchableOpacity>
-      </View>
+  const initials = `${profile?.first_name?.[0] ?? ''}${profile?.last_name?.[0] ?? ''}`.toUpperCase() || '?';
 
-      <ScrollView style={styles.scroll}>
-        {/* ── Profile hero card (1:1 ASDriver dark card) ── */}
-        <View style={styles.profileCard}>
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        {/* ── Big title (1:1 ASDriver "More" screen) ── */}
+        <Text style={styles.pageTitle}>More</Text>
+
+        {/* ── Profile card (ASDriver: avatar + name + subtitle in card) ── */}
+        <TouchableOpacity style={styles.profileCard} onPress={() => setEditing(!editing)} activeOpacity={0.8}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {(profile?.first_name?.[0] ?? '?').toUpperCase()}
-              {(profile?.last_name?.[0] ?? '').toUpperCase()}
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.profileName}>{profile?.first_name} {profile?.last_name}</Text>
+            <Text style={styles.profileSub}>
+              {profile?.tier && profile.tier !== 'STANDARD' ? `${profile.tier} Member` : 'Standard Member'}
             </Text>
           </View>
-          <Text style={styles.customerName}>{profile?.first_name} {profile?.last_name}</Text>
-          <Text style={styles.customerEmail}>{profile?.email}</Text>
-          {profile?.tier && profile.tier !== 'STANDARD' && (
-            <View style={styles.tierBadge}>
-              <Text style={styles.tierText}>{profile.tier} Member</Text>
-            </View>
-          )}
-        </View>
+          <Ionicons name="chevron-forward" size={18} color={MUTED} />
+        </TouchableOpacity>
 
-        {/* ── Personal details card ── */}
-        <View style={styles.card}>
-          <View style={styles.cardTitleRow}>
-            <Text style={styles.cardTitle}>PERSONAL DETAILS</Text>
-          </View>
-          {editing ? (
-            <>
-              <InputField label="First Name" value={form.first_name} onChange={set('first_name')} />
-              <InputField label="Last Name"  value={form.last_name}  onChange={set('last_name')} />
-              <InputField label="Email"      value={form.email}      onChange={set('email')} type="email" />
-              <InputField label="Phone"      value={form.phone}      onChange={set('phone')} type="phone" />
-            </>
-          ) : (
-            <>
-              <Row label="First Name" value={profile?.first_name} />
-              <Row label="Last Name"  value={profile?.last_name} />
-              <Row label="Email"      value={profile?.email} />
-              <Row label="Phone"      value={profile?.phone} />
-            </>
-          )}
-        </View>
-
+        {/* ── Edit form (if editing) ── */}
         {editing && (
-          <View style={styles.section}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditing(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>EDIT PROFILE</Text>
+            {[
+              { label: 'First Name', key: 'first_name' },
+              { label: 'Last Name',  key: 'last_name' },
+              { label: 'Email',      key: 'email' },
+              { label: 'Phone',      key: 'phone' },
+            ].map(({ label, key }) => (
+              <View key={key} style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{label}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={(form as any)[key]}
+                  onChangeText={set(key)}
+                  placeholderTextColor={MUTED}
+                  keyboardType={key === 'email' ? 'email-address' : key === 'phone' ? 'phone-pad' : 'default'}
+                  autoCapitalize={key === 'email' ? 'none' : 'words'}
+                />
+              </View>
+            ))}
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditing(false)}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={() => updateMutation.mutate()} disabled={updateMutation.isPending}>
+                <Text style={styles.saveBtnText}>{updateMutation.isPending ? 'Saving…' : 'Save'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
-        {/* ── Sign out (1:1 ASDriver) ── */}
-        <View style={styles.section}>
-          <TouchableOpacity style={styles.signOutButton} onPress={handleLogout} activeOpacity={0.85}>
-            <Text style={styles.signOutText}>Sign Out</Text>
-          </TouchableOpacity>
+        {/* ── Account section (ASDriver: icon + label rows) ── */}
+        <Text style={styles.sectionLabel}>Account</Text>
+        <View style={styles.menuCard}>
+          <MenuItem icon="card-outline"   label="Payment Methods" onPress={() => router.push('/(app)/payments')} />
+          <View style={styles.divider} />
+          <MenuItem icon="receipt-outline" label="Invoices"        onPress={() => router.push('/(app)/invoices')} />
+          <View style={styles.divider} />
+          <MenuItem icon="person-outline"  label="Profile"         onPress={() => setEditing(!editing)} />
+          <View style={styles.divider} />
+          <MenuItem icon="people-outline"  label="Passengers"      onPress={() => router.push('/(app)/bookings' as any)} />
         </View>
 
-        <View style={{ height: 40 }} />
+        {/* ── Sign out (ASDriver red style) ── */}
+        <TouchableOpacity style={styles.signOutBtn} onPress={handleLogout} activeOpacity={0.8}>
+          <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Row({ label, value }: { label: string; value?: string }) {
+function MenuItem({ icon, label, onPress }: { icon: any; label: string; onPress: () => void }) {
   return (
-    <View style={rowStyles.row}>
-      <Text style={rowStyles.label}>{label}</Text>
-      <Text style={rowStyles.value}>{value || '—'}</Text>
-    </View>
+    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
+      <View style={styles.menuIconWrap}>
+        <Ionicons name={icon} size={18} color={GOLD} />
+      </View>
+      <Text style={styles.menuLabel}>{label}</Text>
+      <Ionicons name="chevron-forward" size={16} color={MUTED} />
+    </TouchableOpacity>
   );
 }
-
-function InputField({ label, value, onChange, type }: any) {
-  return (
-    <View style={rowStyles.inputGroup}>
-      <Text style={rowStyles.inputLabel}>{label}</Text>
-      <TextInput
-        style={rowStyles.input}
-        value={value}
-        onChangeText={onChange}
-        keyboardType={type === 'email' ? 'email-address' : type === 'phone' ? 'phone-pad' : 'default'}
-        autoCapitalize={type === 'email' ? 'none' : 'words'}
-        placeholderTextColor={MUTED}
-      />
-    </View>
-  );
-}
-
-const rowStyles = StyleSheet.create({
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
-  label: { fontSize: 14, color: SUB, flex: 1 },
-  value: { fontSize: 14, color: TEXT, fontWeight: '500', flex: 2, textAlign: 'right' },
-  inputGroup: { gap: 6, marginBottom: 10 },
-  inputLabel: { fontSize: 13, fontWeight: '600', color: '#333' },
-  input: {
-    backgroundColor: INPUT,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 14,
-    color: TEXT,
-    borderWidth: 1,
-    borderColor: INPUT_BORDER,
-  },
-});
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: BG },
+  safe:    { flex: 1, backgroundColor: BG },
+  scroll:  { flex: 1 },
+  content: { paddingHorizontal: 16, paddingTop: 16 },
 
-  // ── Header ──
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 16,
-    backgroundColor: CARD,
-    borderBottomWidth: 1, borderBottomColor: BORDER,
-  },
-  title:    { fontSize: 20, fontWeight: '700', color: TEXT },
-  editLink: { fontSize: 14, color: '#3b82f6', fontWeight: '600' },
+  pageTitle: { fontSize: 32, fontWeight: '700', color: TEXT, marginBottom: 20 },
 
-  scroll: { flex: 1 },
-  section: { paddingHorizontal: 16, marginBottom: 12 },
-
-  // ── Profile hero card (dark, 1:1 ASDriver) ──
+  // Profile card (1:1 ASDriver)
   profileCard: {
-    backgroundColor: DARK,
-    margin: 16,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    gap: 8,
+    backgroundColor: CARD, borderRadius: 16,
+    padding: 16, flexDirection: 'row', alignItems: 'center',
+    gap: 14, borderWidth: 1, borderColor: BORDER, marginBottom: 24,
   },
   avatar: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center', alignItems: 'center',
-    marginBottom: 4,
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: GOLD + '30',
+    alignItems: 'center', justifyContent: 'center',
   },
-  avatarText:    { fontSize: 26, fontWeight: '700', color: '#fff' },
-  customerName:  { fontSize: 22, fontWeight: '700', color: '#fff' },
-  customerEmail: { fontSize: 14, color: 'rgba(255,255,255,0.55)' },
-  tierBadge: {
-    backgroundColor: GOLD + '25',
-    paddingHorizontal: 14, paddingVertical: 5,
-    borderRadius: 20, marginTop: 4,
-    borderWidth: 1, borderColor: GOLD + '40',
-  },
-  tierText: { fontSize: 12, fontWeight: '700', color: GOLD },
+  avatarText:   { fontSize: 18, fontWeight: '700', color: GOLD },
+  profileName:  { fontSize: 16, fontWeight: '700', color: TEXT },
+  profileSub:   { fontSize: 13, color: SUB, marginTop: 2 },
 
-  // ── Info card (white, 1:1 ASDriver) ──
-  card: {
-    backgroundColor: CARD,
-    marginHorizontal: 16, marginBottom: 12,
-    borderRadius: 16, padding: 16, gap: 10,
+  sectionLabel: {
+    fontSize: 13, fontWeight: '600', color: MUTED,
+    marginBottom: 10, paddingLeft: 4,
   },
-  cardTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  cardTitle: { fontSize: 12, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  // ── Buttons ──
-  cancelBtn: {
-    backgroundColor: CARD, borderRadius: 14, paddingVertical: 15,
-    alignItems: 'center', borderWidth: 1, borderColor: BORDER,
+  // Menu card (ASDriver list style)
+  menuCard: {
+    backgroundColor: CARD, borderRadius: 16,
+    borderWidth: 1, borderColor: BORDER, overflow: 'hidden', marginBottom: 20,
   },
-  cancelText: { color: SUB, fontWeight: '600', fontSize: 15 },
-  signOutButton: {
-    backgroundColor: CARD, borderRadius: 14, paddingVertical: 15,
-    alignItems: 'center', borderWidth: 1, borderColor: '#fecaca',
+  menuItem: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 14, paddingHorizontal: 16, gap: 14,
   },
-  signOutText: { color: '#ef4444', fontSize: 15, fontWeight: '600' },
+  menuIconWrap: {
+    width: 32, height: 32, borderRadius: 8,
+    backgroundColor: GOLD + '20', alignItems: 'center', justifyContent: 'center',
+  },
+  menuLabel: { flex: 1, fontSize: 15, color: TEXT, fontWeight: '500' },
+  divider:   { height: 1, backgroundColor: SEPARATOR, marginLeft: 62 },
+
+  // Sign out
+  signOutBtn: {
+    backgroundColor: CARD, borderRadius: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 10, paddingVertical: 16,
+    borderWidth: 1, borderColor: 'rgba(239,68,68,0.25)',
+  },
+  signOutText: { fontSize: 15, fontWeight: '600', color: '#ef4444' },
+
+  // Edit form
+  card:       { backgroundColor: CARD, borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: BORDER },
+  cardTitle:  { fontSize: 11, fontWeight: '700', color: MUTED, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 14 },
+  inputGroup: { marginBottom: 12 },
+  inputLabel: { fontSize: 12, fontWeight: '600', color: SUB, marginBottom: 5 },
+  input: {
+    backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 14, color: TEXT,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+  },
+  cancelBtn:  { flex: 1, borderRadius: 10, borderWidth: 1, borderColor: BORDER, paddingVertical: 12, alignItems: 'center' },
+  cancelText: { color: SUB, fontWeight: '600' },
+  saveBtn:    { flex: 1, borderRadius: 10, backgroundColor: GOLD, paddingVertical: 12, alignItems: 'center' },
+  saveBtnText:{ color: '#000', fontWeight: '700' },
 });

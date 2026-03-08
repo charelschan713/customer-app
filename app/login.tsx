@@ -10,7 +10,7 @@ import { router } from 'expo-router';
 import { loginWithEmail, loginWithOtp, fetchAndStoreUser } from '../src/lib/auth';
 import { registerPushToken } from '../src/lib/notifications';
 import api, { TENANT_SLUG } from '../src/lib/api';
-import { BG, CARD, DARK, TEXT, SUB, MUTED, BORDER, INPUT, INPUT_BORDER, GOLD } from '../src/lib/format';
+import { BG, CARD, TEXT, SUB, MUTED, BORDER, INPUT, INPUT_BORDER, GOLD } from '../src/lib/format';
 
 const COUNTRY_CODES = [
   { code: '+61', label: 'Australia (+61)' },
@@ -245,11 +245,11 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 15, color: SUB, marginTop: 6 },
 
   // Tabs (ASDriver: dark active)
-  tabs:         { flexDirection: 'row', backgroundColor: '#ebebeb', borderRadius: 12, padding: 4, marginBottom: 24 },
+  tabs:         { flexDirection: 'row', backgroundColor: CARD, borderRadius: 12, padding: 4, marginBottom: 24 },
   tab:          { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
-  tabActive:    { backgroundColor: DARK },
+  tabActive:    { backgroundColor: GOLD },
   tabText:      { fontSize: 12, fontWeight: '600', color: MUTED },
-  tabTextActive:{ color: '#fff', fontSize: 12, fontWeight: '700' },
+  tabTextActive:{ color: '#000', fontSize: 12, fontWeight: '700' },
 
   // Form
   form:  { gap: 16, marginBottom: 16 },
@@ -272,8 +272,8 @@ const styles = StyleSheet.create({
   otpInput: { textAlign: 'center', fontSize: 24, letterSpacing: 12, fontWeight: '700' },
 
   // Primary button (ASDriver: #1a1a1a)
-  btn:     { backgroundColor: DARK, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  btn:     { backgroundColor: GOLD, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
+  btnText: { color: '#000', fontSize: 16, fontWeight: '600' },
 
   // Resend / link
   resend:    { alignItems: 'center', paddingVertical: 8 },

@@ -9,20 +9,20 @@ const LOCAL_LOGO = require('../assets/logo.png');
 import { router } from 'expo-router';
 import { loginWithEmail, loginWithOtp } from '../src/lib/auth';
 import { registerPushToken } from '../src/lib/notifications';
-import api from '../src/lib/api';
+import api, { TENANT_SLUG } from '../src/lib/api';
 import { BG, CARD, GOLD, BORDER, TEXT, MUTED } from '../src/lib/format';
 
 const COUNTRY_CODES = [
-  { code: '+61', label: '🇦🇺 Australia (+61)' },
-  { code: '+1',  label: '🇺🇸 USA / Canada (+1)' },
-  { code: '+44', label: '🇬🇧 UK (+44)' },
-  { code: '+64', label: '🇳🇿 New Zealand (+64)' },
-  { code: '+65', label: '🇸🇬 Singapore (+65)' },
-  { code: '+852',label: '🇭🇰 Hong Kong (+852)' },
-  { code: '+86', label: '🇨🇳 China (+86)' },
-  { code: '+81', label: '🇯🇵 Japan (+81)' },
-  { code: '+82', label: '🇰🇷 South Korea (+82)' },
-  { code: '+91', label: '🇮🇳 India (+91)' },
+  { code: '+61', label: 'Australia (+61)' },
+  { code: '+1',  label: 'USA / Canada (+1)' },
+  { code: '+44', label: 'UK (+44)' },
+  { code: '+64', label: 'New Zealand (+64)' },
+  { code: '+65', label: 'Singapore (+65)' },
+  { code: '+852', label: 'Hong Kong (+852)' },
+  { code: '+86', label: 'China (+86)' },
+  { code: '+81', label: 'Japan (+81)' },
+  { code: '+82', label: 'South Korea (+82)' },
+  { code: '+91', label: 'India (+91)' },
 ];
 
 export default function LoginScreen() {
@@ -48,7 +48,7 @@ export default function LoginScreen() {
     if (!phone) return;
     setLoading(true);
     try {
-      await api.post('/customer-portal/auth/send-otp', { phone_country_code: phoneCode, phone_number: phone });
+      await api.post('/customer-auth/otp/send', { tenantSlug: TENANT_SLUG, phone: `${phoneCode}${phone}` });
       setOtpSent(true);
       startCountdown();
     } catch (e: any) {

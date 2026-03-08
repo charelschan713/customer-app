@@ -1,8 +1,21 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView, Image,
+  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView, Image, ActionSheetIOS,
 } from 'react-native';
+
+const COUNTRY_CODES = [
+  { code: '+61', label: 'Australia (+61)' },
+  { code: '+1',  label: 'USA / Canada (+1)' },
+  { code: '+44', label: 'UK (+44)' },
+  { code: '+64', label: 'New Zealand (+64)' },
+  { code: '+65', label: 'Singapore (+65)' },
+  { code: '+852',label: 'Hong Kong (+852)' },
+  { code: '+86', label: 'China (+86)' },
+  { code: '+81', label: 'Japan (+81)' },
+  { code: '+82', label: 'South Korea (+82)' },
+  { code: '+91', label: 'India (+91)' },
+];
 
 const LOGO_URL = process.env.EXPO_PUBLIC_LOGO_URL ?? null;
 const LOCAL_LOGO = require('../assets/logo.png');
@@ -20,9 +33,22 @@ export default function RegisterScreen() {
 
   const set = (k: string) => (v: string) => setForm(f => ({ ...f, [k]: v }));
 
+  const showCountryPicker = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ['Cancel', ...COUNTRY_CODES.map(c => c.label)], cancelButtonIndex: 0, title: 'Select Country Code' },
+        (idx) => { if (idx > 0) setForm(p => ({ ...p, phone_country_code: COUNTRY_CODES[idx - 1].code })); }
+      );
+    }
+  };
+
   const handleRegister = async () => {
     if (!form.first_name || !form.email || !form.password) {
       Alert.alert('Required', 'Please fill in all required fields');
+      return;
+    }
+    if (!form.phone_number) {
+      Alert.alert('Required', 'Mobile number is required');
       return;
     }
     setLoading(true);
@@ -67,13 +93,11 @@ export default function RegisterScreen() {
             <TextInput style={styles.input} value={form.password} onChangeText={set('password')} placeholder="Min 8 characters" placeholderTextColor={MUTED} secureTextEntry />
           </View>
           <View style={styles.field}>
-            <Text style={styles.label}>Mobile (optional)</Text>
-            <View style={styles.phoneRow}>
-              <View style={styles.codeBox}>
-                <Text style={styles.codeText}>+61</Text>
-              </View>
-              <TextInput style={[styles.input, { flex: 1 }]} value={form.phone_number} onChangeText={set('phone_number')} placeholder="412 345 678" placeholderTextColor={MUTED} keyboardType="phone-pad" />
-            </View>
+            <Text style={styles.label}>Mobile *</Text>
+            <TouchableOpacity style={styles.codeDropdown} onPress={showCountryPicker}>
+              <Text style={styles.codeDropdownText}>{form.phone_country_code} ▾</Text>
+            </TouchableOpacity>
+            <TextInput style={[styles.input, { marginTop: 8 }]} value={form.phone_number} onChangeText={set('phone_number')} placeholder="412 345 678" placeholderTextColor={MUTED} keyboardType="phone-pad" />
           </View>
         </View>
 
@@ -102,9 +126,8 @@ const styles = StyleSheet.create({
   field: { gap: 6 },
   label: { fontSize: 13, fontWeight: '600', color: MUTED },
   input: { backgroundColor: CARD, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: '#fff', borderWidth: 1, borderColor: BORDER },
-  phoneRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  codeBox: { backgroundColor: CARD, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, borderWidth: 1, borderColor: BORDER },
-  codeText: { color: '#fff', fontWeight: '600' },
+  codeDropdown: { backgroundColor: CARD, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1, borderColor: BORDER },
+  codeDropdownText: { color: TEXT, fontSize: 15, fontWeight: '600' },
   btn: { backgroundColor: GOLD, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 4 },
   btnText: { color: '#000', fontSize: 16, fontWeight: '700' },
   link: { alignItems: 'center', marginTop: 20 },

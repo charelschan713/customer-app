@@ -313,27 +313,24 @@ const styles = StyleSheet.create({
     marginTop: 8, marginBottom: 12,
   },
 
-  // ── Dark card (upcoming) — 1:1 web DarkBookingCard background: #1a1a1a ──
+  // ── Dark card (upcoming) — ASDriver brandDark #1A1A2E ──────────────────
   darkCard: {
-    backgroundColor: '#1a1a2e',   // deep navy, darker than CARD for contrast
+    backgroundColor: BG,           // #1A1A2E — same as page bg, use border for definition
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: BORDER,           // #333355
+  },
+
+  // ── Light card (past) — ASDriver CARD colour, slightly lighter than bg ──
+  lightCard: {
+    backgroundColor: CARD,          // #222236
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 0.5,
-    borderColor: BORDER,
-  },
-
-  // ── Light card (past) — 1:1 web bg-white + shadow ─────────────────────
-  lightCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderColor: BORDER,             // #333355
   },
 
   // Shared row helpers
@@ -346,21 +343,21 @@ const styles = StyleSheet.create({
 
   // Booking refs
   bookingRef:      { fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'], color: '#fff' },
-  lightBookingRef: { fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'], color: '#1a1a1a' },
+  lightBookingRef: { fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'], color: '#fff' },
 
   // Route
   routeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
   darkRouteText:  { flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.75)' },
-  lightRouteText: { flex: 1, fontSize: 13, color: '#6B7280' },
+  lightRouteText: { flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.6)' },
 
   // Times
   darkTimeText:  { fontSize: 12, color: 'rgba(255,255,255,0.4)', marginLeft: 2 },
-  lightTimeText: { fontSize: 12, color: '#9CA3AF', marginLeft: 2 },
+  lightTimeText: { fontSize: 12, color: 'rgba(255,255,255,0.35)', marginLeft: 2 },
 
   // Prices
   goldPrice: { fontSize: 15, fontWeight: '700', color: GOLD },
-  darkPrice: { fontSize: 15, fontWeight: '700', color: '#1a1a1a' },
+  darkPrice: { fontSize: 15, fontWeight: '700', color: GOLD },
 
   // Empty state
   empty:     { alignItems: 'center', paddingVertical: 80, gap: 10 },

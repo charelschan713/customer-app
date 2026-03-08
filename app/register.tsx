@@ -4,7 +4,8 @@ import {
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView, Image,
 } from 'react-native';
 
-const LOGO_URL = process.env.EXPO_PUBLIC_LOGO_URL ?? 'https://erdsjplilnmrcltlecra.supabase.co/storage/v1/object/public/tenant-assets/aschauffeured/logo.png';
+const LOGO_URL = process.env.EXPO_PUBLIC_LOGO_URL ?? null;
+const LOCAL_LOGO = require('../assets/logo.png');
 import { router } from 'expo-router';
 import { register } from '../src/lib/auth';
 import { registerPushToken } from '../src/lib/notifications';
@@ -41,7 +42,7 @@ export default function RegisterScreen() {
           <TouchableOpacity style={styles.back} onPress={() => router.back()}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
-          <Image source={{ uri: LOGO_URL }} style={styles.logo} resizeMode="contain" />
+          <Image source={LOGO_URL ? { uri: LOGO_URL } : LOCAL_LOGO} style={styles.logo} resizeMode="contain" />
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Join ASChauffeured today</Text>
         </View>
@@ -93,7 +94,7 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', marginBottom: 32 },
   back: { alignSelf: 'flex-start', marginBottom: 20 },
   backText: { color: GOLD, fontSize: 15, fontWeight: '500' },
-  logo: { width: 320, height: 90, marginBottom: 16 },
+  logo: { width: 260, height: 44, marginBottom: 24, alignSelf: 'center' },
   title: { fontSize: 26, fontWeight: '700', color: '#fff' },
   subtitle: { fontSize: 14, color: MUTED, marginTop: 4 },
   form: { gap: 14, marginBottom: 20 },

@@ -1,17 +1,29 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView, Image,
+  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView, Image, ActionSheetIOS,
 } from 'react-native';
 
-const LOGO_URL = process.env.EXPO_PUBLIC_LOGO_URL ?? 'https://erdsjplilnmrcltlecra.supabase.co/storage/v1/object/public/tenant-assets/aschauffeured/logo.png';
+const LOGO_URL = process.env.EXPO_PUBLIC_LOGO_URL ?? null;
+const LOCAL_LOGO = require('../assets/logo.png');
 import { router } from 'expo-router';
 import { loginWithEmail, loginWithOtp } from '../src/lib/auth';
 import { registerPushToken } from '../src/lib/notifications';
 import api from '../src/lib/api';
 import { BG, CARD, GOLD, BORDER, TEXT, MUTED } from '../src/lib/format';
 
-const COUNTRY_CODES = ['+61', '+1', '+44', '+64', '+65', '+852'];
+const COUNTRY_CODES = [
+  { code: '+61', label: '🇦🇺 Australia (+61)' },
+  { code: '+1',  label: '🇺🇸 USA / Canada (+1)' },
+  { code: '+44', label: '🇬🇧 UK (+44)' },
+  { code: '+64', label: '🇳🇿 New Zealand (+64)' },
+  { code: '+65', label: '🇸🇬 Singapore (+65)' },
+  { code: '+852',label: '🇭🇰 Hong Kong (+852)' },
+  { code: '+86', label: '🇨🇳 China (+86)' },
+  { code: '+81', label: '🇯🇵 Japan (+81)' },
+  { code: '+82', label: '🇰🇷 South Korea (+82)' },
+  { code: '+91', label: '🇮🇳 India (+91)' },
+];
 
 export default function LoginScreen() {
   const [tab, setTab] = useState<'email' | 'phone'>('email');
@@ -59,12 +71,25 @@ export default function LoginScreen() {
     } finally { setLoading(false); }
   };
 
+  const showCountryPicker = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', ...COUNTRY_CODES.map(c => c.label)],
+          cancelButtonIndex: 0,
+          title: 'Select Country Code',
+        },
+        (idx) => { if (idx > 0) setPhoneCode(COUNTRY_CODES[idx - 1].code); }
+      );
+    }
+  };
+
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: BG }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
-          <Image source={{ uri: LOGO_URL }} style={styles.logo} resizeMode="contain" />
+          <Image source={LOGO_URL ? { uri: LOGO_URL } : LOCAL_LOGO} style={styles.logo} resizeMode="contain" />
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>Sign in to your account</Text>
         </View>
@@ -98,15 +123,9 @@ export default function LoginScreen() {
           <View style={styles.form}>
             <View style={styles.field}>
               <Text style={styles.label}>Mobile Number</Text>
-              <View style={styles.phoneRow}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.codePicker}>
-                  {COUNTRY_CODES.map(c => (
-                    <TouchableOpacity key={c} style={[styles.codeBtn, phoneCode === c && styles.codeBtnActive]} onPress={() => setPhoneCode(c)}>
-                      <Text style={[styles.codeText, phoneCode === c && styles.codeTextActive]}>{c}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+              <TouchableOpacity style={styles.codeDropdown} onPress={showCountryPicker}>
+                <Text style={styles.codeDropdownText}>{phoneCode} ▾</Text>
+              </TouchableOpacity>
               <TextInput style={[styles.input, { marginTop: 8 }]} value={phone} onChangeText={setPhone}
                 placeholder="412 345 678" placeholderTextColor={MUTED} keyboardType="phone-pad" />
             </View>
@@ -148,7 +167,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   inner: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 80, paddingBottom: 40 },
   header: { alignItems: 'center', marginBottom: 40 },
-  logo: { width: 320, height: 90, marginBottom: 20 },
+  logo: { width: 260, height: 44, marginBottom: 24, alignSelf: 'center' },
   title: { fontSize: 28, fontWeight: '700', color: TEXT },
   subtitle: { fontSize: 15, color: MUTED, marginTop: 6 },
   tabs: { flexDirection: 'row', backgroundColor: CARD, borderRadius: 12, padding: 4, marginBottom: 24 },
@@ -160,12 +179,8 @@ const styles = StyleSheet.create({
   field: { gap: 6 },
   label: { fontSize: 13, fontWeight: '600', color: MUTED },
   input: { backgroundColor: CARD, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: TEXT, borderWidth: 1, borderColor: BORDER },
-  phoneRow: { flexDirection: 'row' },
-  codePicker: { flexGrow: 0 },
-  codeBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginRight: 6, backgroundColor: CARD, borderWidth: 1, borderColor: BORDER },
-  codeBtnActive: { backgroundColor: GOLD, borderColor: GOLD },
-  codeText: { color: MUTED, fontWeight: '600' },
-  codeTextActive: { color: '#000' },
+  codeDropdown: { backgroundColor: CARD, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 8, borderWidth: 1, borderColor: BORDER },
+  codeDropdownText: { color: TEXT, fontSize: 15, fontWeight: '600' },
   otpInput: { textAlign: 'center', fontSize: 24, letterSpacing: 12, fontWeight: '700' },
   btn: { backgroundColor: GOLD, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
   btnText: { color: '#000', fontSize: 16, fontWeight: '700' },

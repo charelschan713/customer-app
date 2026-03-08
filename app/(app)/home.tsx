@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
+import {
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, RefreshControl, ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import api from '../../src/lib/api';
 import { getStoredUser } from '../../src/lib/auth';
-import { BG, CARD, GOLD, BORDER, TEXT, MUTED, fmtMoney, fmtDateShort } from '../../src/lib/format';
+import { BG, CARD, DARK, TEXT, SUB, MUTED, BORDER, GOLD, fmtMoney, fmtDateShort } from '../../src/lib/format';
 
-const STATUS_COLOR: Record<string, string> = {
-  CONFIRMED: '#22c55e',
+const STATUS_COLORS: Record<string, string> = {
+  CONFIRMED:                     '#22c55e',
   PENDING_CUSTOMER_CONFIRMATION: '#f59e0b',
-  COMPLETED: '#6366f1',
-  CANCELLED: '#ef4444',
-  IN_PROGRESS: '#3b82f6',
+  COMPLETED:                     '#8b5cf6',
+  CANCELLED:                     '#ef4444',
+  IN_PROGRESS:                   '#3b82f6',
+  ASSIGNED:                      '#3b82f6',
 };
 
 export default function HomeScreen() {
@@ -22,7 +26,7 @@ export default function HomeScreen() {
   const { data: bookings = [], isLoading, refetch } = useQuery({
     queryKey: ['bookings', 'upcoming'],
     queryFn: async () => {
-      const res = await api.get('/customer-portal/bookings', { params: { upcoming: true, limit: 3 } });
+      const res = await api.get('/customer-portal/bookings', { params: { upcoming: true, limit: 4 } });
       return res.data?.data ?? res.data ?? [];
     },
   });
@@ -31,153 +35,246 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={GOLD} />
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color={DARK} style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
+    <SafeAreaView style={styles.container}>
+      {/* ── Header ── */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Hello, {user?.first_name ?? 'Guest'} 👋</Text>
+          <Text style={styles.subGreeting}>
+            {next ? '🚗 You have an upcoming trip' : '✅ No upcoming trips'}
+          </Text>
+        </View>
+        <TouchableOpacity style={styles.bookBtn} onPress={() => router.push('/(app)/book')}>
+          <Text style={styles.bookBtnText}>+ Book</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
-        style={{ flex: 1 }}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} tintColor={GOLD} />}
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        style={styles.scroll}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={DARK} />}
       >
-        {/* Greeting */}
-        <View style={styles.greeting}>
-          <View style={{ gap: 4 }}>
-            <Text style={styles.greetSub}>Good day,</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <Text style={styles.greetName}>{user?.first_name ?? 'Welcome'}</Text>
-              {user?.tier && user.tier !== 'STANDARD' && (
-                <View style={[styles.badge, { backgroundColor: user.tier === 'VIP' ? GOLD : '#7c3aed' }]}>
-                  <Text style={styles.badgeText}>{user.tier}</Text>
-                </View>
-              )}
-              {user?.discount_rate > 0 && (
-                <View style={[styles.badge, { backgroundColor: '#1a3a1a', borderWidth: 1, borderColor: '#22c55e' }]}>
-                  <Text style={[styles.badgeText, { color: '#22c55e' }]}>{Number(user.discount_rate).toFixed(0)}% OFF</Text>
-                </View>
-              )}
+        {/* ── Membership badge ── */}
+        {(user?.tier && user.tier !== 'STANDARD') && (
+          <View style={styles.section}>
+            <View style={styles.memberCard}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.memberLabel}>MEMBERSHIP</Text>
+                <Text style={styles.memberTier}>{user.tier}</Text>
+                {user.discount_rate > 0 && (
+                  <Text style={styles.memberDiscount}>{Number(user.discount_rate).toFixed(0)}% personal discount applied</Text>
+                )}
+              </View>
+              <View style={styles.memberBadge}>
+                <Text style={styles.memberBadgeText}>★</Text>
+              </View>
             </View>
           </View>
-          <TouchableOpacity style={styles.bookBtn} onPress={() => router.push('/(app)/book')}>
-            <Text style={styles.bookBtnText}>+ Book</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Next trip */}
-        {next && (
-          <TouchableOpacity style={styles.nextCard} onPress={() => router.push(`/(app)/bookings/${next.id}`)}>
-            <Text style={styles.nextLabel}>UPCOMING TRIP</Text>
-            <View style={styles.nextRef}>
-              <Text style={styles.nextRefText}>{next.booking_reference}</Text>
-              <View style={[styles.badge, { backgroundColor: (STATUS_COLOR[next.operational_status] ?? '#888') + '25' }]}>
-                <Text style={[styles.badgeText, { color: STATUS_COLOR[next.operational_status] ?? '#888' }]}>
-                  {next.operational_status?.replace(/_/g, ' ')}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.nextTime}>📅 {fmtDateShort(next.pickup_at_utc)}</Text>
-            <View style={styles.route}>
-              <View style={styles.routeRow}>
-                <View style={[styles.dot, { backgroundColor: '#22c55e' }]} />
-                <Text style={styles.addr} numberOfLines={1}>{next.pickup_address_text}</Text>
-              </View>
-              <View style={styles.routeRow}>
-                <View style={[styles.dot, { backgroundColor: GOLD }]} />
-                <Text style={styles.addr} numberOfLines={1}>{next.dropoff_address_text}</Text>
-              </View>
-            </View>
-            <Text style={styles.nextTotal}>{fmtMoney(next.total_price_minor, next.currency)}</Text>
-          </TouchableOpacity>
         )}
 
-        {/* Quick actions */}
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actions}>
-          {[
-            { icon: '🚗', label: 'Book a Ride', onPress: () => router.push('/(app)/book') },
-            { icon: '📋', label: 'My Trips', onPress: () => router.push('/(app)/bookings') },
-            { icon: '💳', label: 'Payment', onPress: () => router.push('/(app)/payments') },
-            { icon: '👤', label: 'Profile', onPress: () => router.push('/(app)/profile') },
-          ].map((a) => (
-            <TouchableOpacity key={a.label} style={styles.actionCard} onPress={a.onPress}>
-              <Text style={styles.actionIcon}>{a.icon}</Text>
-              <Text style={styles.actionLabel}>{a.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Recent trips */}
-        {bookings.length > 1 && (
-          <>
-            <View style={styles.sectionRow}>
-              <Text style={styles.sectionTitle}>Recent Trips</Text>
-              <TouchableOpacity onPress={() => router.push('/(app)/bookings')}>
-                <Text style={styles.seeAll}>See All</Text>
-              </TouchableOpacity>
-            </View>
-            {bookings.slice(1).map((b: any) => (
-              <TouchableOpacity key={b.id} style={styles.tripCard} onPress={() => router.push(`/(app)/bookings/${b.id}`)}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.tripRef}>{b.booking_reference}</Text>
-                  <Text style={styles.tripDate}>{fmtDateShort(b.pickup_at_utc)}</Text>
+        {/* ── Current / next trip ── */}
+        {next && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🚗 Upcoming Trip</Text>
+            <TouchableOpacity
+              style={styles.activeJobCard}
+              onPress={() => router.push(`/(app)/bookings/${next.id}`)}
+              activeOpacity={0.85}
+            >
+              {/* Status badge */}
+              <View style={styles.jobHeader}>
+                <Text style={styles.bookingNumber}>#{next.booking_reference}</Text>
+                <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[next.operational_status] ?? '#888') + '25' }]}>
+                  <Text style={[styles.statusText, { color: STATUS_COLORS[next.operational_status] ?? '#888' }]}>
+                    {next.operational_status?.replace(/_/g, ' ')}
+                  </Text>
                 </View>
-                <Text style={styles.tripAmt}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
+              </View>
+
+              {/* Route */}
+              <View style={styles.routeContainer}>
+                <View style={styles.routeRow}>
+                  <View style={[styles.routeDot, { backgroundColor: '#22c55e' }]} />
+                  <Text style={styles.routeText} numberOfLines={1}>{next.pickup_address_text}</Text>
+                </View>
+                {next.dropoff_address_text && (
+                  <View style={styles.routeRow}>
+                    <View style={[styles.routeDot, { backgroundColor: '#ef4444' }]} />
+                    <Text style={styles.routeText} numberOfLines={1}>{next.dropoff_address_text}</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Footer */}
+              <View style={styles.jobFooter}>
+                <Text style={styles.dateTime}>📅 {fmtDateShort(next.pickup_at_utc)}</Text>
+                <Text style={styles.price}>{fmtMoney(next.total_price_minor, next.currency)}</Text>
+              </View>
+
+              <View style={styles.tapHint}>
+                <Text style={styles.tapHintText}>Tap to view details →</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ── Pending jobs ── */}
+        {bookings.slice(1).length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📋 More Trips</Text>
+            {bookings.slice(1).map((b: any) => (
+              <TouchableOpacity
+                key={b.id}
+                style={styles.pendingCard}
+                onPress={() => router.push(`/(app)/bookings/${b.id}`)}
+                activeOpacity={0.85}
+              >
+                <View style={styles.jobHeader}>
+                  <Text style={[styles.bookingNumber, { color: TEXT }]}>#{b.booking_reference}</Text>
+                  <Text style={styles.vehicleClass}>{b.service_class_name ?? ''}</Text>
+                </View>
+                <View style={styles.routeContainer}>
+                  <View style={styles.routeRow}>
+                    <View style={[styles.routeDot, { backgroundColor: '#22c55e' }]} />
+                    <Text style={[styles.routeText, { color: SUB }]} numberOfLines={1}>{b.pickup_address_text}</Text>
+                  </View>
+                  {b.dropoff_address_text && (
+                    <View style={styles.routeRow}>
+                      <View style={[styles.routeDot, { backgroundColor: '#ef4444' }]} />
+                      <Text style={[styles.routeText, { color: SUB }]} numberOfLines={1}>{b.dropoff_address_text}</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.jobFooter}>
+                  <Text style={[styles.dateTime, { color: SUB }]}>📅 {fmtDateShort(b.pickup_at_utc)}</Text>
+                  <Text style={[styles.price]}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
+                </View>
               </TouchableOpacity>
             ))}
-          </>
+          </View>
         )}
 
+        {/* ── Empty state ── */}
         {!isLoading && bookings.length === 0 && (
-          <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>✦</Text>
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>🛣️</Text>
             <Text style={styles.emptyTitle}>No upcoming trips</Text>
-            <TouchableOpacity style={styles.btn} onPress={() => router.push('/(app)/book')}>
-              <Text style={styles.btnText}>Book Your First Ride</Text>
+            <Text style={styles.emptySubtitle}>Book your next luxury ride below</Text>
+            <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(app)/book')} activeOpacity={0.85}>
+              <Text style={styles.emptyBtnText}>Book a Ride</Text>
             </TouchableOpacity>
           </View>
         )}
+
+        <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  greeting: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  greetSub: { fontSize: 13, color: MUTED },
-  greetName: { fontSize: 24, fontWeight: '700', color: TEXT },
-  bookBtn: { backgroundColor: GOLD, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20 },
-  bookBtnText: { color: '#000', fontWeight: '700', fontSize: 14 },
-  nextCard: { backgroundColor: '#13161d', borderRadius: 20, borderWidth: 1, borderColor: BORDER, padding: 20, marginBottom: 28, gap: 10 },
-  nextLabel: { fontSize: 10, color: GOLD, fontWeight: '700', letterSpacing: 2 },
-  nextRef: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  nextRefText: { fontSize: 16, fontWeight: '700', color: TEXT, fontFamily: 'monospace' },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  badgeText: { fontSize: 11, fontWeight: '700', color: '#000', letterSpacing: 0.5 },
-  badgeText: { fontSize: 11, fontWeight: '600' },
-  nextTime: { fontSize: 13, color: MUTED },
-  route: { gap: 8 },
-  routeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  addr: { flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.7)' },
-  nextTotal: { fontSize: 22, fontWeight: '700', color: GOLD, textAlign: 'right' },
-  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
-  seeAll: { fontSize: 13, color: GOLD },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 28 },
-  actionCard: { width: '47%', backgroundColor: CARD, borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 18, alignItems: 'center', gap: 8 },
-  actionIcon: { fontSize: 28 },
-  actionLabel: { fontSize: 13, fontWeight: '600', color: TEXT },
-  tripCard: { backgroundColor: CARD, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  tripRef: { fontSize: 14, fontWeight: '600', color: TEXT, fontFamily: 'monospace' },
-  tripDate: { fontSize: 12, color: MUTED, marginTop: 2 },
-  tripAmt: { fontSize: 16, fontWeight: '700', color: GOLD },
-  empty: { alignItems: 'center', paddingVertical: 60, gap: 12 },
-  emptyEmoji: { fontSize: 40, color: GOLD },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: TEXT },
-  btn: { backgroundColor: GOLD, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 28, marginTop: 8 },
-  btnText: { color: '#000', fontWeight: '700', fontSize: 15 },
+  container: { flex: 1, backgroundColor: BG },
+
+  // ── Header (1:1 ASDriver) ──
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: CARD,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+  },
+  greeting:    { fontSize: 18, fontWeight: '700', color: TEXT },
+  subGreeting: { fontSize: 13, color: SUB, marginTop: 2 },
+  bookBtn: {
+    backgroundColor: DARK,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  bookBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+
+  scroll: { flex: 1 },
+  section: { padding: 16 },
+
+  // ── Section title (1:1 ASDriver) ──
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: TEXT, marginBottom: 12 },
+
+  // ── Membership card ──
+  memberCard: {
+    backgroundColor: DARK,
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  memberLabel:    { fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: '700', letterSpacing: 2, marginBottom: 4 },
+  memberTier:     { fontSize: 20, fontWeight: '700', color: GOLD },
+  memberDiscount: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
+  memberBadge: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: GOLD + '25', alignItems: 'center', justifyContent: 'center',
+  },
+  memberBadgeText: { fontSize: 22, color: GOLD },
+
+  // ── Active/upcoming job card (1:1 ASDriver activeJobCard — dark) ──
+  activeJobCard: {
+    backgroundColor: DARK,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  jobHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  bookingNumber: { fontSize: 15, fontWeight: '700', color: '#fff', fontFamily: 'monospace' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  statusText:  { fontSize: 11, fontWeight: '600' },
+  vehicleClass: { fontSize: 12, color: MUTED, fontWeight: '600' },
+
+  routeContainer: { gap: 8 },
+  routeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  routeDot: { width: 8, height: 8, borderRadius: 4, marginTop: 4, flexShrink: 0 },
+  routeText: { flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 18 },
+
+  jobFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  dateTime: { fontSize: 12, color: 'rgba(255,255,255,0.5)' },
+  price: { fontSize: 18, fontWeight: '700', color: GOLD },  // gold replaces ASDriver green
+
+  tapHint: { alignItems: 'center' },
+  tapHintText: { fontSize: 12, color: 'rgba(255,255,255,0.4)' },
+
+  // ── Pending / secondary trip card (1:1 ASDriver pendingCard — white) ──
+  pendingCard: {
+    backgroundColor: CARD,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+
+  // ── Empty state ──
+  emptyState: { alignItems: 'center', paddingVertical: 80, gap: 12 },
+  emptyEmoji:    { fontSize: 48 },
+  emptyTitle:    { fontSize: 18, fontWeight: '700', color: TEXT },
+  emptySubtitle: { fontSize: 14, color: SUB, textAlign: 'center', paddingHorizontal: 40 },
+  emptyBtn: {
+    backgroundColor: DARK,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    marginTop: 8,
+  },
+  emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });

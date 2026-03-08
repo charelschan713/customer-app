@@ -2,7 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIn
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../src/lib/api';
-import { BG, CARD, GOLD, BORDER, TEXT, MUTED } from '../../src/lib/format';
+import { BG, CARD, DARK, TEXT, SUB, MUTED, BORDER, INPUT, INPUT_BORDER, GOLD } from '../../src/lib/format';
 
 const BRAND_ICON: Record<string, string> = {
   visa: '💳', mastercard: '💳', amex: '💳', default: '💳',
@@ -37,7 +37,7 @@ export default function PaymentsScreen() {
         <Text style={styles.title}>Payment Methods</Text>
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-        {isLoading && <ActivityIndicator color={GOLD} style={{ marginTop: 40 }} />}
+        {isLoading && <ActivityIndicator color={DARK} style={{ marginTop: 40 }} />}
         {!isLoading && methods.length === 0 && (
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>💳</Text>

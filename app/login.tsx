@@ -10,7 +10,7 @@ import { router } from 'expo-router';
 import { loginWithEmail, loginWithOtp, fetchAndStoreUser } from '../src/lib/auth';
 import { registerPushToken } from '../src/lib/notifications';
 import api, { TENANT_SLUG } from '../src/lib/api';
-import { BG, CARD, GOLD, BORDER, TEXT, MUTED } from '../src/lib/format';
+import { BG, CARD, DARK, TEXT, SUB, MUTED, BORDER, INPUT, INPUT_BORDER, GOLD } from '../src/lib/format';
 
 const COUNTRY_CODES = [
   { code: '+61', label: 'Australia (+61)' },
@@ -237,27 +237,47 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  inner: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 80, paddingBottom: 40 },
-  header: { alignItems: 'center', marginBottom: 40 },
-  logo: { width: 260, height: 44, marginBottom: 24, alignSelf: 'center' },
-  title: { fontSize: 28, fontWeight: '700', color: TEXT },
-  subtitle: { fontSize: 15, color: MUTED, marginTop: 6 },
-  tabs: { flexDirection: 'row', backgroundColor: CARD, borderRadius: 12, padding: 4, marginBottom: 24 },
-  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
-  tabActive: { backgroundColor: GOLD },
-  tabText: { fontSize: 12, fontWeight: '600', color: MUTED },
-  tabTextActive: { color: '#000', fontSize: 12, fontWeight: '700' },
-  form: { gap: 16, marginBottom: 16 },
+  // 1:1 ASDriver login style
+  inner:    { flexGrow: 1, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40, backgroundColor: BG },
+  header:   { alignItems: 'center', marginBottom: 36 },
+  logo:     { width: 240, height: 44, marginBottom: 20, alignSelf: 'center' },
+  title:    { fontSize: 28, fontWeight: '700', color: TEXT },
+  subtitle: { fontSize: 15, color: SUB, marginTop: 6 },
+
+  // Tabs (ASDriver: dark active)
+  tabs:         { flexDirection: 'row', backgroundColor: '#ebebeb', borderRadius: 12, padding: 4, marginBottom: 24 },
+  tab:          { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+  tabActive:    { backgroundColor: DARK },
+  tabText:      { fontSize: 12, fontWeight: '600', color: MUTED },
+  tabTextActive:{ color: '#fff', fontSize: 12, fontWeight: '700' },
+
+  // Form
+  form:  { gap: 16, marginBottom: 16 },
   field: { gap: 6 },
-  label: { fontSize: 13, fontWeight: '600', color: MUTED },
-  input: { backgroundColor: CARD, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: TEXT, borderWidth: 1, borderColor: BORDER },
-  codeDropdown: { backgroundColor: CARD, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1, borderColor: BORDER },
+  label: { fontSize: 13, fontWeight: '600', color: '#333' },
+
+  // Inputs (ASDriver: #f5f5f5 bg, #e8e8e8 border)
+  input: {
+    backgroundColor: INPUT, borderRadius: 12,
+    paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: 15, color: TEXT,
+    borderWidth: 1, borderColor: INPUT_BORDER,
+  },
+  codeDropdown: {
+    backgroundColor: INPUT, borderRadius: 12,
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderWidth: 1, borderColor: INPUT_BORDER,
+  },
   codeDropdownText: { color: TEXT, fontSize: 15, fontWeight: '600' },
   otpInput: { textAlign: 'center', fontSize: 24, letterSpacing: 12, fontWeight: '700' },
-  btn: { backgroundColor: GOLD, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  btnText: { color: '#000', fontSize: 16, fontWeight: '700' },
-  resend: { alignItems: 'center', paddingVertical: 8 },
-  resendText: { color: GOLD, fontSize: 14 },
-  link: { alignItems: 'center', marginTop: 24 },
-  linkText: { color: MUTED, fontSize: 14 },
+
+  // Primary button (ASDriver: #1a1a1a)
+  btn:     { backgroundColor: DARK, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+
+  // Resend / link
+  resend:    { alignItems: 'center', paddingVertical: 8 },
+  resendText:{ color: GOLD, fontSize: 14 },
+  link:      { alignItems: 'center', marginTop: 24 },
+  linkText:  { color: SUB, fontSize: 14 },
 });

@@ -1,9 +1,14 @@
-export const GOLD = process.env.EXPO_PUBLIC_PRIMARY_COLOR ?? '#c8a96b';
-export const BG   = '#0d0f14';
-export const CARD = '#13161d';
-export const BORDER = 'rgba(200,169,107,0.15)';
-export const TEXT  = '#ffffff';
-export const MUTED = 'rgba(255,255,255,0.45)';
+// ── Design tokens — 1:1 ASDriver style, gold replaces green ──
+export const GOLD    = '#c8a96b';   // brand accent (ASDriver uses #22c55e for earnings)
+export const BG      = '#f5f5f5';   // page background
+export const CARD    = '#ffffff';   // card background
+export const DARK    = '#1a1a1a';   // hero card / primary button
+export const TEXT    = '#1a1a1a';   // primary text
+export const SUB     = '#666666';   // secondary text
+export const MUTED   = '#999999';   // muted / section titles
+export const BORDER  = '#f0f0f0';   // dividers / card borders
+export const INPUT   = '#f5f5f5';   // input background
+export const INPUT_BORDER = '#e8e8e8'; // input border
 
 export function fmtMoney(minor: number | string | null | undefined, currency = 'AUD') {
   const n = Number(minor ?? 0) / 100;

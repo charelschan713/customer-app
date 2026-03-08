@@ -3,11 +3,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import api from '../../../src/lib/api';
-import { BG, CARD, GOLD, BORDER, TEXT, MUTED, fmtMoney, fmtDateShort } from '../../../src/lib/format';
+import { BG, CARD, DARK, TEXT, SUB, MUTED, BORDER, GOLD, fmtMoney, fmtDateShort } from '../../../src/lib/format';
 
 const STATUS_COLOR: Record<string, string> = {
   CONFIRMED: '#22c55e', PENDING_CUSTOMER_CONFIRMATION: '#f59e0b',
-  COMPLETED: '#6366f1', CANCELLED: '#ef4444', IN_PROGRESS: '#3b82f6',
+  COMPLETED: '#8b5cf6', CANCELLED: '#ef4444', IN_PROGRESS: '#3b82f6', ASSIGNED: '#3b82f6',
 };
 
 export default function BookingsScreen() {
@@ -22,53 +22,70 @@ export default function BookingsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={GOLD} />
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color={DARK} style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
+    <SafeAreaView style={styles.container}>
+      {/* Header (1:1 ASDriver) */}
       <View style={styles.header}>
         <Text style={styles.title}>My Trips</Text>
-        <TouchableOpacity style={styles.newBtn} onPress={() => router.push('/(app)/book')}>
-          <Text style={styles.newBtnText}>+ New</Text>
+        <TouchableOpacity style={styles.newBtn} onPress={() => router.push('/(app)/book')} activeOpacity={0.85}>
+          <Text style={styles.newBtnText}>+ Book</Text>
         </TouchableOpacity>
       </View>
+
       <ScrollView
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={GOLD} />}
+        style={styles.scroll}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={DARK} />}
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
       >
-        {bookings.length === 0 && !isLoading && (
-          <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>🚗</Text>
+        {bookings.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>🛣️</Text>
             <Text style={styles.emptyTitle}>No trips yet</Text>
+            <Text style={styles.emptySubtitle}>Book your first luxury ride</Text>
           </View>
         )}
         {bookings.map((b: any) => {
           const color = STATUS_COLOR[b.operational_status] ?? '#888';
           return (
-            <TouchableOpacity key={b.id} style={styles.card} onPress={() => router.push(`/(app)/bookings/${b.id}`)}>
+            <TouchableOpacity
+              key={b.id}
+              style={styles.card}
+              onPress={() => router.push(`/(app)/bookings/${b.id}`)}
+              activeOpacity={0.85}
+            >
+              {/* Card header */}
               <View style={styles.cardTop}>
                 <Text style={styles.ref}>{b.booking_reference}</Text>
-                <View style={[styles.badge, { backgroundColor: color + '22' }]}>
-                  <Text style={[styles.badgeText, { color }]}>{b.operational_status?.replace(/_/g,' ')}</Text>
+                <View style={[styles.statusBadge, { backgroundColor: color + '20' }]}>
+                  <Text style={[styles.statusText, { color }]}>
+                    {b.operational_status?.replace(/_/g, ' ')}
+                  </Text>
                 </View>
               </View>
-              <Text style={styles.date}>📅 {fmtDateShort(b.pickup_at_utc)}</Text>
-              <View style={styles.route}>
+
+              {/* Route */}
+              <View style={styles.routeContainer}>
                 <View style={styles.routeRow}>
-                  <View style={[styles.dot, { backgroundColor: '#22c55e' }]} />
+                  <View style={[styles.routeDot, { backgroundColor: '#22c55e' }]} />
                   <Text style={styles.addr} numberOfLines={1}>{b.pickup_address_text}</Text>
                 </View>
-                <View style={styles.routeRow}>
-                  <View style={[styles.dot, { backgroundColor: GOLD }]} />
-                  <Text style={styles.addr} numberOfLines={1}>{b.dropoff_address_text}</Text>
-                </View>
+                {b.dropoff_address_text && (
+                  <View style={styles.routeRow}>
+                    <View style={[styles.routeDot, { backgroundColor: '#ef4444' }]} />
+                    <Text style={styles.addr} numberOfLines={1}>{b.dropoff_address_text}</Text>
+                  </View>
+                )}
               </View>
-              <View style={styles.footer}>
-                <Text style={styles.vehicle}>{b.car_type_name ?? b.service_class_name}</Text>
+
+              {/* Footer */}
+              <View style={styles.cardFooter}>
+                <Text style={styles.date}>📅 {fmtDateShort(b.pickup_at_utc)}</Text>
                 <Text style={styles.amount}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
               </View>
             </TouchableOpacity>
@@ -80,24 +97,44 @@ export default function BookingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 12 },
-  title: { fontSize: 26, fontWeight: '700', color: TEXT },
-  newBtn: { backgroundColor: GOLD, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  newBtnText: { color: '#000', fontWeight: '700' },
-  card: { backgroundColor: CARD, borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 16, marginBottom: 12, gap: 10 },
+  container: { flex: 1, backgroundColor: BG },
+
+  // Header (1:1 ASDriver)
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 16,
+    backgroundColor: CARD,
+    borderBottomWidth: 1, borderBottomColor: BORDER,
+  },
+  title:      { fontSize: 20, fontWeight: '700', color: TEXT },
+  newBtn:     { backgroundColor: DARK, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  newBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+
+  scroll: { flex: 1 },
+
+  // Card (1:1 ASDriver pendingCard)
+  card: {
+    backgroundColor: CARD,
+    borderRadius: 16, padding: 16, marginBottom: 12, gap: 10,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+  },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  ref: { fontSize: 15, fontWeight: '700', color: TEXT, fontFamily: 'monospace' },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  badgeText: { fontSize: 11, fontWeight: '600' },
-  date: { fontSize: 13, color: MUTED },
-  route: { gap: 6 },
-  routeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dot: { width: 7, height: 7, borderRadius: 4 },
-  addr: { flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.65)' },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: BORDER, paddingTop: 10 },
-  vehicle: { fontSize: 13, color: MUTED },
-  amount: { fontSize: 16, fontWeight: '700', color: GOLD },
-  empty: { alignItems: 'center', paddingVertical: 80, gap: 12 },
-  emptyEmoji: { fontSize: 40 },
-  emptyTitle: { fontSize: 17, color: MUTED },
+  ref:     { fontSize: 15, fontWeight: '700', color: TEXT, fontFamily: 'monospace' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  statusText:  { fontSize: 11, fontWeight: '600' },
+
+  routeContainer: { gap: 8 },
+  routeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  routeDot: { width: 8, height: 8, borderRadius: 4, marginTop: 4, flexShrink: 0 },
+  addr: { flex: 1, fontSize: 13, color: SUB, lineHeight: 18 },
+
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 },
+  date:   { fontSize: 12, color: MUTED },
+  amount: { fontSize: 16, fontWeight: '700', color: GOLD },  // gold = ASDriver green
+
+  emptyState:    { alignItems: 'center', paddingVertical: 80, gap: 12 },
+  emptyEmoji:    { fontSize: 48 },
+  emptyTitle:    { fontSize: 18, fontWeight: '700', color: TEXT },
+  emptySubtitle: { fontSize: 14, color: SUB },
 });

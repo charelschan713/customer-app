@@ -260,6 +260,7 @@ export default function BookScreen() {
   const [showTime, setShowTime]           = useState(false);
   const [showReturnDate, setShowReturnDate] = useState(false);
   const [showReturnTime, setShowReturnTime] = useState(false);
+  const [showTripType, setShowTripType]   = useState(false);
   const [showUrgent, setShowUrgent]       = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
@@ -460,14 +461,12 @@ export default function BookScreen() {
           ) : (
             <View>
               <Text style={styles.fl}>TRIP TYPE</Text>
-              <View style={styles.tripToggle}>
-                {(['ONE_WAY','RETURN'] as const).map(t => (
-                  <TouchableOpacity key={t} style={[styles.tripToggleBtn, tripType===t && styles.tripToggleBtnActive]}
-                    onPress={() => { setTripType(t); clearQuote(); }}>
-                    <Text style={[styles.tripToggleTxt, tripType===t && styles.tripToggleTxtActive]}>{t === 'ONE_WAY' ? 'One Way' : 'Return'}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <TouchableOpacity style={styles.select} onPress={() => {
+                setShowTripType(true);
+              }}>
+                <Text style={styles.selectText}>{tripType === 'ONE_WAY' ? 'One Way' : 'Return'}</Text>
+                <Ionicons name="chevron-down" size={14} color={MUTED} />
+              </TouchableOpacity>
             </View>
           )}
 
@@ -705,6 +704,8 @@ export default function BookScreen() {
       </ScrollView>
 
       {/* Modals */}
+      <PickerModal visible={showTripType} title="Trip Type" options={[{label:'One Way',value:'ONE_WAY'},{label:'Return',value:'RETURN'}]} value={tripType}
+        onSelect={v=>{setTripType(v as any);clearQuote();}} onClose={()=>setShowTripType(false)} />
       <PickerModal visible={showCity} title="Select City" options={cities.map(c=>({label:c.name,value:c.id}))} value={cityId}
         onSelect={v=>{setCityId(v);clearQuote();}} onClose={()=>setShowCity(false)} />
       <PickerModal visible={showService} title="Service Type" options={serviceTypes.map(s=>({label:s.name,value:s.id}))} value={serviceTypeId}

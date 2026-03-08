@@ -39,7 +39,7 @@ export default function RegisterScreen() {
           <TouchableOpacity style={styles.back} onPress={() => router.back()}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.logo}>✦ AS</Text>
+          <Text style={styles.logo}>ASCHAUFFEURED</Text>
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Join ASChauffeured today</Text>
         </View>

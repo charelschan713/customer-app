@@ -34,16 +34,11 @@ export default function AppLayout() {
     };
   }, [queryClient]);
 
-  const onTabPress = () => {
-    // 1:1 ASDriverNative: UIImpactFeedbackGenerator(.light).impactOccurred()
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
-
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        // 1:1 ASDriverNative: .tint(.brandGold) — standard iOS tab bar
+        // 1:1 ASDriverNative: .tint(.brandGold)
         tabBarActiveTintColor: GOLD,
         tabBarInactiveTintColor: '#6B7280',
         tabBarStyle: {
@@ -54,86 +49,58 @@ export default function AppLayout() {
         tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
       }}
       screenListeners={{
-        tabPress: onTabPress,
+        tabPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
       }}
     >
-      {/* Home — house / house.fill */}
+      {/* ── Visible tabs (1:1 ASDriverNative) ── */}
       <Tabs.Screen
         name="home"
         options={{
           title: 'Home',
           tabBarIcon: ({ focused, size }) => (
-            <Ionicons
-              name={focused ? 'home' : 'home-outline'}
-              size={size}
-              color={focused ? GOLD : '#6B7280'}
-            />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
           ),
         }}
       />
-
-      {/* Jobs — list.bullet.clipboard / .fill → list-circle */}
       <Tabs.Screen
         name="bookings"
         options={{
           title: 'Jobs',
           tabBarIcon: ({ focused, size }) => (
-            <Ionicons
-              name={focused ? 'list-circle' : 'list-circle-outline'}
-              size={size}
-              color={focused ? GOLD : '#6B7280'}
-            />
+            <Ionicons name={focused ? 'list-circle' : 'list-circle-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
           ),
         }}
       />
-
-      {/* Book (= Calendar equivalent for customer) — calendar.circle / .fill */}
       <Tabs.Screen
         name="book"
         options={{
           title: 'Book',
           tabBarIcon: ({ focused, size }) => (
-            <Ionicons
-              name={focused ? 'add-circle' : 'add-circle-outline'}
-              size={size}
-              color={focused ? GOLD : '#6B7280'}
-            />
+            <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
           ),
         }}
       />
-
-      {/* Invoices — receipt */}
       <Tabs.Screen
         name="invoices"
         options={{
           title: 'Invoices',
           tabBarIcon: ({ focused, size }) => (
-            <Ionicons
-              name={focused ? 'receipt' : 'receipt-outline'}
-              size={size}
-              color={focused ? GOLD : '#6B7280'}
-            />
+            <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
           ),
         }}
       />
-
-      {/* More — ellipsis.circle / .fill */}
       <Tabs.Screen
         name="profile"
         options={{
           title: 'More',
           tabBarIcon: ({ focused, size }) => (
-            <Ionicons
-              name={focused ? 'ellipsis-horizontal-circle' : 'ellipsis-horizontal-circle-outline'}
-              size={size}
-              color={focused ? GOLD : '#6B7280'}
-            />
+            <Ionicons name={focused ? 'ellipsis-horizontal-circle' : 'ellipsis-horizontal-circle-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
           ),
         }}
       />
 
-      {/* Hidden */}
-      <Tabs.Screen name="payments" options={{ href: null }} />
+      {/* ── Hidden from tab bar ── */}
+      <Tabs.Screen name="payments"  options={{ href: null }} />
     </Tabs>
   );
 }

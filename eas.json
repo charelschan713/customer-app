@@ -1,0 +1,29 @@
+{
+  "cli": { "version": ">= 10.0.0" },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://chauffeur-saas-production.up.railway.app",
+        "EXPO_PUBLIC_TENANT_SLUG": "aschauffeured",
+        "EXPO_PUBLIC_STRIPE_PK": "pk_test_placeholder"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://chauffeur-saas-production.up.railway.app",
+        "EXPO_PUBLIC_TENANT_SLUG": "aschauffeured",
+        "EXPO_PUBLIC_STRIPE_PK": "pk_test_placeholder"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://chauffeur-saas-production.up.railway.app",
+        "EXPO_PUBLIC_TENANT_SLUG": "aschauffeured",
+        "EXPO_PUBLIC_STRIPE_PK": "pk_live_placeholder"
+      }
+    }
+  }
+}

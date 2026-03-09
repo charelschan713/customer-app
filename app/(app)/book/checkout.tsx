@@ -40,11 +40,13 @@ export default function CheckoutScreen() {
           email:     u.email      ?? '',
         }));
         api.get('/customer-portal/payment-methods').then(r => {
-          const cards = r.data?.data ?? r.data ?? [];
+          const rawCards = r.data?.data ?? r.data ?? [];
+          // Null-guard: only include cards that have a usable stripe_payment_method_id
+          const cards = rawCards.filter((c: any) => !!c.stripe_payment_method_id);
           setSavedCards(cards);
           if (cards.length > 0) {
             const def = cards.find((c: any) => c.is_default) ?? cards[0];
-            setSelectedCard(def.stripe_payment_method_id);
+            setSelectedCard(def.stripe_payment_method_id ?? null);
           } else {
             setUseNewCard(true);
           }

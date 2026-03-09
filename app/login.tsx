@@ -9,6 +9,7 @@ const LOCAL_LOGO = require('../assets/logo.png');
 import { router } from 'expo-router';
 import { loginWithEmail, loginWithOtp, fetchAndStoreUser } from '../src/lib/auth';
 import { registerPushToken } from '../src/lib/notifications';
+import * as SecureStore from 'expo-secure-store';
 import api, { TENANT_SLUG } from '../src/lib/api';
 import { BG, CARD, TEXT, SUB, MUTED, BORDER, INPUT, INPUT_BORDER, GOLD } from '../src/lib/format';
 
@@ -89,7 +90,17 @@ export default function LoginScreen() {
         await loginWithEmailOtp(otpEmail, emailOtp);
       }
       await registerPushToken().catch(() => {});
-      router.replace('/(app)/home');
+
+      // Restore post-login intent if set (e.g. user was mid-booking, got redirected to login)
+      let returnRoute: string = '/(app)/home';
+      try {
+        const savedRoute = await SecureStore.getItemAsync('post_login_route');
+        if (savedRoute) {
+          returnRoute = savedRoute;
+          await SecureStore.deleteItemAsync('post_login_route');
+        }
+      } catch {}
+      router.replace(returnRoute as any);
     } catch (e: any) {
       Alert.alert('Login Failed', e.response?.data?.message ?? e.message ?? 'Please try again');
     } finally { setLoading(false); }

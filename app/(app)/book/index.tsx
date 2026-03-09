@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import * as SecureStore from 'expo-secure-store';
 import api from '../../../src/lib/api';
 import { BG, CARD, BORDER, TEXT, MUTED, GOLD, SUCCESS, WARNING, ERROR } from '../../../src/lib/format';
 
@@ -299,6 +300,42 @@ export default function BookScreen() {
 
   useEffect(() => { loadConfig(); }, [loadConfig]);
 
+  // Restore quote draft after login redirect or tab switch
+  useEffect(() => {
+    SecureStore.getItemAsync('quote_draft').then((raw) => {
+      if (!raw) return;
+      try {
+        const draft = JSON.parse(raw);
+        if (!draft.expiresAt || draft.expiresAt < Date.now()) {
+          SecureStore.deleteItemAsync('quote_draft').catch(() => {});
+          return;
+        }
+        setQuoteId(draft.quoteId);
+        setQuoteResults(draft.results ?? []);
+        setCurrency(draft.currency ?? 'AUD');
+        if (draft.selectedCarId) setSelectedCarId(draft.selectedCarId);
+        // Restore form snapshot
+        const f = draft.formSnapshot ?? {};
+        if (f.pickup) setPickup(f.pickup);
+        if (f.dropoff) setDropoff(f.dropoff);
+        if (f.date) setDate(f.date);
+        if (f.time) setTime(f.time);
+        if (f.passengers) setPassengers(f.passengers);
+        if (f.luggage != null) setLuggage(f.luggage);
+        if (f.waypoints?.length) setWaypoints(f.waypoints);
+        if (f.infantSeats) setInfantSeats(f.infantSeats);
+        if (f.toddlerSeats) setToddlerSeats(f.toddlerSeats);
+        if (f.boosterSeats) setBoosterSeats(f.boosterSeats);
+        if (f.tripType) setTripType(f.tripType);
+        if (f.returnDate) setReturnDate(f.returnDate);
+        if (f.returnTime) setReturnTime(f.returnTime);
+        if (f.cityId) setCityId(f.cityId);
+        if (f.serviceTypeId) setServiceTypeId(f.serviceTypeId);
+      } catch {}
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Get Quote
   const handleGetQuote = async () => {
     if (!pickup || !date || !time) {
@@ -355,29 +392,72 @@ export default function BookScreen() {
       });
       if (!qr.ok) throw new Error('Failed to get quote');
       const quote = await qr.json();
-      setQuoteId(quote.quote_id);
-      setQuoteResults(quote.results ?? []);
+      const newQuoteId = quote.quote_id as string;
+      const newResults = (quote.results ?? []) as QuoteResult[];
+      const firstCarId = newResults[0]?.service_class_id ?? null;
+      setQuoteId(newQuoteId);
+      setQuoteResults(newResults);
       setCurrency(quote.currency ?? 'AUD');
-      if (quote.results?.length > 0) setSelectedCarId(quote.results[0].service_class_id);
+      if (firstCarId) setSelectedCarId(firstCarId);
+
+      // Persist quote draft — survives login redirect + tab switches (25 min TTL)
+      try {
+        await SecureStore.setItemAsync('quote_draft', JSON.stringify({
+          quoteId:      newQuoteId,
+          selectedCarId: firstCarId,
+          results:      newResults,
+          currency:     quote.currency ?? 'AUD',
+          formSnapshot: { pickup, dropoff, date, time, passengers, luggage,
+            waypoints: waypoints.filter(Boolean), infantSeats, toddlerSeats, boosterSeats,
+            tripType, returnDate, returnTime, cityId, serviceTypeId },
+          expiresAt: Date.now() + 25 * 60 * 1000,
+        }));
+      } catch {}
+
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
     } catch (e: any) {
       Alert.alert('Quote failed', e.message ?? 'Please try again.');
     } finally { setQuoting(false); }
   };
 
-  // Book Now
-  const handleBookNow = async () => {
+  // Book Now — navigate to checkout screen (DO NOT call the backend here)
+  // The checkout screen handles booking creation + payment method collection.
+  const handleBookNow = () => {
     if (!quoteId || !selectedCarId) return;
-    setBooking(true);
-    try {
-      const res = await api.post('/customer-portal/bookings/create-from-quote', {
-        quote_id: quoteId, service_class_id: selectedCarId,
-      });
-      const bookingId = res.data?.id ?? res.data?.booking?.id;
-      router.push(bookingId ? `/(app)/bookings/${bookingId}` : '/(app)/bookings');
-    } catch (e: any) {
-      Alert.alert('Booking failed', e?.response?.data?.message ?? 'Please try again.');
-    } finally { setBooking(false); }
+    const selectedResult = quoteResults.find(r => r.service_class_id === selectedCarId);
+    if (!selectedResult) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Save post-login route so login redirect brings user back here
+    SecureStore.setItemAsync('post_login_route', '/(app)/book').catch(() => {});
+
+    router.push({
+      pathname: '/(app)/book/checkout',
+      params: {
+        // Checkout reads these three params
+        result:    JSON.stringify({
+          ...selectedResult,
+          // Normalise name field so checkout summary shows correctly
+          car_type_name: selectedResult.service_class_name,
+        }),
+        sessionId: quoteId,
+        form:      JSON.stringify({
+          pickup,
+          dropoff:      dropoff || pickup,
+          date,
+          time,
+          passengerCount:  passengers,
+          luggageCount:    luggage,
+          waypoints:       waypoints.filter(Boolean),
+          infantSeats,
+          toddlerSeats,
+          boosterSeats,
+          isReturnTrip:    tripType === 'RETURN',
+          returnDate:      returnDate || undefined,
+          returnTime:      returnTime || undefined,
+        }),
+      },
+    });
   };
 
   if (loadingConfig) {

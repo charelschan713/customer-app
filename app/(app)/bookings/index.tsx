@@ -14,17 +14,11 @@ import * as Haptics from 'expo-haptics';
 import api from '../../../src/lib/api';
 import { BG, CARD, TEXT, MUTED, GOLD, SUCCESS, WARNING, ERROR, fmtMoney } from '../../../src/lib/format';
 
-// ── Status config — 1:1 web STATUS_CONFIG ─────────────────────────────────
-const STATUS: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  PENDING_CUSTOMER_CONFIRMATION: { label: 'Confirming',  color: '#F59E0B', bg: 'rgba(245,158,11,0.15)',   dot: '#F59E0B' },
-  AWAITING_CONFIRMATION:         { label: 'Confirming',  color: '#F59E0B', bg: 'rgba(245,158,11,0.15)',   dot: '#F59E0B' },
-  CONFIRMED:                     { label: 'Confirmed',   color: '#22C55E', bg: 'rgba(34,197,94,0.15)',    dot: '#22C55E' },
-  ASSIGNED:                      { label: 'Assigned',    color: '#60A5FA', bg: 'rgba(96,165,250,0.15)',   dot: '#60A5FA' },
-  IN_PROGRESS:                   { label: 'Ongoing',     color: '#A78BFA', bg: 'rgba(167,139,250,0.15)',  dot: '#A78BFA' },
-  COMPLETED:                     { label: 'Completed',   color: '#9CA3AF', bg: 'rgba(156,163,175,0.12)',  dot: '#9CA3AF' },
-  CANCELLED:                     { label: 'Cancelled',   color: '#EF4444', bg: 'rgba(239,68,68,0.15)',    dot: '#EF4444' },
-  PAYMENT_FAILED:                { label: 'Pay Failed',  color: '#EF4444', bg: 'rgba(239,68,68,0.15)',    dot: '#EF4444' },
-};
+import { OP_STATUS_CONFIG } from '../../../src/lib/booking-status';
+
+// ── Status config — derived from shared booking-status constants ───────────
+// Mirrors bookings.operational_status backend real values (UPPERCASE)
+const STATUS = OP_STATUS_CONFIG;
 
 const TABS = ['Upcoming', 'Past', 'All'] as const;
 type Tab = typeof TABS[number];

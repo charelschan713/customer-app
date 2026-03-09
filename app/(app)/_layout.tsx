@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { GOLD } from '../../src/lib/format';
+import { setUnauthorizedHandler } from '../../src/lib/api';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -21,6 +22,11 @@ export default function AppLayout() {
   const responseRef = useRef<any>();
 
   useEffect(() => {
+    // Register 401 handler — redirect to login when auth token expires
+    setUnauthorizedHandler(() => {
+      router.replace('/login');
+    });
+
     notifRef.current = Notifications.addNotificationReceivedListener(() => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
     });
@@ -29,6 +35,7 @@ export default function AppLayout() {
       if (data?.booking_id) router.push(`/(app)/bookings/${data.booking_id}`);
     });
     return () => {
+      setUnauthorizedHandler(null);
       Notifications.removeNotificationSubscription(notifRef.current);
       Notifications.removeNotificationSubscription(responseRef.current);
     };

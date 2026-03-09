@@ -4,19 +4,18 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../../src/lib/api';
 import { BG, CARD, GOLD, BORDER, TEXT, MUTED, fmtMoney, fmtDate } from '../../../src/lib/format';
+import {
+  OP_STATUS_CONFIG,
+  DRIVER_EXEC_STATUS,
+  CANCELLABLE_STATUSES,
+  CUSTOMER_CONFIRMABLE_STATUSES,
+  TERMINAL_STATUSES,
+} from '../../../src/lib/booking-status';
 
-const STATUS_COLOR: Record<string, string> = {
-  CONFIRMED: '#22c55e', PENDING_CUSTOMER_CONFIRMATION: '#f59e0b',
-  COMPLETED: '#6366f1', CANCELLED: '#ef4444', IN_PROGRESS: '#3b82f6',
-};
-
-const DRIVER_STATUS: Record<string, string> = {
-  ACCEPTED: '✅ Driver accepted',
-  ON_THE_WAY: '🚗 Driver on the way',
-  ARRIVED: '📍 Driver arrived',
-  PASSENGER_ON_BOARD: '🎉 On board',
-  JOB_DONE: '✓ Trip complete',
-};
+// Derive STATUS_COLOR map from shared config for backward compat
+const STATUS_COLOR: Record<string, string> = Object.fromEntries(
+  Object.entries(OP_STATUS_CONFIG).map(([k, v]) => [k, v.color])
+);
 
 export default function BookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -87,18 +86,20 @@ export default function BookingDetailScreen() {
           <Text style={[styles.statusText, { color: statusColor }]}>
             {booking.operational_status?.replace(/_/g, ' ')}
           </Text>
-          {driverStatus && DRIVER_STATUS[driverStatus] && (
-            <Text style={styles.driverStatus}>{DRIVER_STATUS[driverStatus]}</Text>
+          {driverStatus && DRIVER_EXEC_STATUS[driverStatus] && (
+            <Text style={styles.driverStatus}>
+              {DRIVER_EXEC_STATUS[driverStatus].emoji} {DRIVER_EXEC_STATUS[driverStatus].label}
+            </Text>
           )}
         </View>
 
-        {/* Driver en-route banner */}
-        {driverStatus === 'ON_THE_WAY' && (
+        {/* Driver en-route / arrived banners — use lowercase backend values */}
+        {driverStatus === 'on_the_way' && (
           <View style={styles.enRoute}>
             <Text style={styles.enRouteText}>🚗 Your chauffeur is on the way!</Text>
           </View>
         )}
-        {driverStatus === 'ARRIVED' && (
+        {driverStatus === 'arrived' && (
           <View style={[styles.enRoute, { backgroundColor: '#f97316' + '20', borderColor: '#f97316' + '40' }]}>
             <Text style={[styles.enRouteText, { color: '#f97316' }]}>📍 Your chauffeur has arrived!</Text>
           </View>
@@ -170,12 +171,12 @@ export default function BookingDetailScreen() {
 
         {/* Actions */}
         <View style={{ gap: 10, marginTop: 8 }}>
-          {booking.operational_status === 'PENDING_CUSTOMER_CONFIRMATION' && (
+          {CUSTOMER_CONFIRMABLE_STATUSES.includes(booking.operational_status as any) && (
             <TouchableOpacity style={styles.confirmBtn} onPress={() => confirmMutation.mutate()} disabled={confirmMutation.isPending}>
               {confirmMutation.isPending ? <ActivityIndicator color="#000" /> : <Text style={styles.confirmBtnText}>✓ Confirm Booking</Text>}
             </TouchableOpacity>
           )}
-          {['CONFIRMED', 'PENDING_CUSTOMER_CONFIRMATION'].includes(booking.operational_status) && (
+          {CANCELLABLE_STATUSES.includes(booking.operational_status as any) && (
             <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} disabled={cancelMutation.isPending}>
               <Text style={styles.cancelBtnText}>Cancel Booking</Text>
             </TouchableOpacity>

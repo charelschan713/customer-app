@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { StripeProvider, CardField, useStripe } from '@stripe/stripe-react-native';
+import * as SecureStore from 'expo-secure-store';
 import api, { TENANT_SLUG } from '../../../src/lib/api';
 import { getStoredUser } from '../../../src/lib/auth';
 import { BG, CARD, GOLD, BORDER, TEXT, MUTED, fmtMoney } from '../../../src/lib/format';
@@ -17,14 +18,16 @@ export default function CheckoutScreen() {
   const quoteResult = JSON.parse(result ?? '{}');
   const formData    = JSON.parse(form ?? '{}');
 
-  const { createPaymentMethod } = useStripe();
-  const [user, setUser]           = useState<any>(null);
-  const [savedCards, setSavedCards] = useState<any[]>([]);
+  const { createPaymentMethod, confirmSetupIntent, handleNextAction } = useStripe();
+  const [user, setUser]               = useState<any>(null);
+  const [savedCards, setSavedCards]   = useState<any[]>([]);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [useNewCard, setUseNewCard]   = useState(false);
   const [loading, setLoading]         = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
-  const [pax, setPax] = useState({ firstName: '', lastName: '', email: '', phone: '', notes: '' });
+  const [pax, setPax] = useState({
+    firstName: '', lastName: '', email: '', phone: '', notes: '',
+  });
 
   useEffect(() => {
     getStoredUser().then((u) => {
@@ -36,7 +39,6 @@ export default function CheckoutScreen() {
           lastName:  u.last_name  ?? '',
           email:     u.email      ?? '',
         }));
-        // Fetch saved cards
         api.get('/customer-portal/payment-methods').then(r => {
           const cards = r.data?.data ?? r.data ?? [];
           setSavedCards(cards);
@@ -55,19 +57,76 @@ export default function CheckoutScreen() {
 
   const set = (k: string) => (v: string) => setPax(p => ({ ...p, [k]: v }));
 
+  // ── Full booking payload ─────────────────────────────────────────────────
+  // NOTE: Server-side price is authoritative (quote session). totalPriceMinor
+  // is sent as a hint only; backend re-validates from quote session.
   const buildPayload = (paymentMethodId?: string, setupIntentId?: string) => ({
-    quoteId: sessionId,
-    vehicleClassId: quoteResult.service_class_id,
-    totalPriceMinor: quoteResult.estimated_total_minor,
-    currency: quoteResult.currency ?? 'AUD',
-    passengerCount: formData.passengerCount ?? 1,
-    passengerFirstName: pax.firstName,
-    passengerLastName:  pax.lastName,
-    notes: pax.notes || undefined,
+    quoteId:           sessionId,
+    vehicleClassId:    quoteResult.service_class_id,
+    totalPriceMinor:   quoteResult.estimated_total_minor,
+    currency:          quoteResult.currency ?? 'AUD',
+    // Passenger
+    passengerCount:    formData.passengerCount    ?? 1,
+    luggageCount:      formData.luggageCount      ?? 0,
+    passengerFirstName: pax.firstName             || undefined,
+    passengerLastName:  pax.lastName              || undefined,
+    passengerEmail:     pax.email                 || undefined,
+    passengerPhone:     pax.phone                 || undefined,
+    notes:              pax.notes                 || undefined,
+    // Trip extras
+    waypoints:     formData.waypoints?.filter(Boolean) ?? [],
+    infantSeats:   formData.infantSeats   ?? 0,
+    toddlerSeats:  formData.toddlerSeats  ?? 0,
+    boosterSeats:  formData.boosterSeats  ?? 0,
+    isReturnTrip:  formData.isReturnTrip  ?? false,
+    ...(formData.isReturnTrip && formData.returnDate && formData.returnTime
+      ? {
+          returnPickupAtUtc: (() => {
+            try { return new Date(`${formData.returnDate}T${formData.returnTime}:00`).toISOString(); } catch { return undefined; }
+          })(),
+          returnPickupAddressText: formData.dropoff || formData.pickup,
+        }
+      : {}),
+    // Payment
     ...(paymentMethodId ? { paymentMethodId } : {}),
     ...(setupIntentId   ? { setupIntentId }   : {}),
   });
 
+  // ── Create booking helper ────────────────────────────────────────────────
+  const createBooking = async (paymentMethodId?: string, setupIntentId?: string) => {
+    const isLoggedIn = !!user;
+    const currentToken = await SecureStore.getItemAsync('token').catch(() => null);
+
+    if (isLoggedIn && currentToken) {
+      const res = await api.post('/customer-portal/bookings', buildPayload(paymentMethodId, setupIntentId));
+      return res.data?.booking ?? res.data;
+    } else {
+      // Guest checkout
+      const res = await api.post('/customer-portal/guest/checkout', {
+        ...buildPayload(paymentMethodId, setupIntentId),
+        guestCheckout: true,
+        tenantSlug:    TENANT_SLUG,
+        firstName:     pax.firstName,
+        lastName:      pax.lastName,
+        email:         pax.email,
+        phone:         pax.phone,
+      });
+      return res.data?.booking ?? res.data;
+    }
+  };
+
+  // ── Navigate to success ──────────────────────────────────────────────────
+  const navigateSuccess = (booking: any) => {
+    // Clear quote draft — booking completed
+    SecureStore.deleteItemAsync('quote_draft').catch(() => {});
+    SecureStore.deleteItemAsync('post_login_route').catch(() => {});
+    router.replace({
+      pathname: '/(app)/bookings/success',
+      params: { ref: booking?.booking_reference ?? booking?.id ?? '' },
+    });
+  };
+
+  // ── Main pay handler ────────────────────────────────────────────────────
   const handlePay = async () => {
     if (!pax.firstName || !pax.email) {
       Alert.alert('Required', 'Please enter your name and email');
@@ -75,51 +134,73 @@ export default function CheckoutScreen() {
     }
     setLoading(true);
     try {
-      const isLoggedIn = !!user;
-
-      if (isLoggedIn && selectedCard && !useNewCard) {
-        // Pay with saved card
-        const res = await api.post('/customer-portal/bookings', buildPayload(selectedCard));
-        router.replace({ pathname: '/(app)/bookings/success', params: { ref: res.data.booking_reference ?? res.data.id } });
+      // ── Path A: Saved card ──────────────────────────────────────────────
+      if (selectedCard && !useNewCard) {
+        const booking = await createBooking(selectedCard);
+        navigateSuccess(booking);
         return;
       }
 
-      // New card flow
+      // ── Path B: New card ────────────────────────────────────────────────
       if (!cardComplete) {
         Alert.alert('Card', 'Please enter your card details');
-        setLoading(false);
-        return;
-      }
-      const { paymentMethod, error } = await createPaymentMethod({
-        paymentMethodType: 'Card',
-        paymentMethodData: { billingDetails: { name: `${pax.firstName} ${pax.lastName}` } },
-      });
-      if (error || !paymentMethod) {
-        Alert.alert('Card Error', error?.message ?? 'Card setup failed');
-        setLoading(false);
         return;
       }
 
+      const isLoggedIn = !!user;
+
       if (isLoggedIn) {
-        const res = await api.post('/customer-portal/bookings', buildPayload(paymentMethod.id));
-        router.replace({ pathname: '/(app)/bookings/success', params: { ref: res.data.booking_reference ?? res.data.id } });
-      } else {
-        const res = await api.post('/customer-portal/guest/checkout', {
-          ...buildPayload(paymentMethod.id),
-          guestCheckout: true,
-          tenantSlug: TENANT_SLUG,
-          firstName: pax.firstName,
-          lastName:  pax.lastName,
-          email:     pax.email,
-          phone:     pax.phone,
+        // Aligned with web: use SetupIntent so the card is saved to customer account.
+        // confirmSetupIntent handles 3DS inline (same as web's confirmCardSetup).
+        let siClientSecret: string;
+        try {
+          const { data: siData } = await api.post('/customer-portal/payments/setup-intent');
+          siClientSecret = siData.client_secret;
+        } catch {
+          // Fallback: use createPaymentMethod if setup-intent unavailable
+          await handlePayWithCreatePM(isLoggedIn);
+          return;
+        }
+
+        const { setupIntent, error: siError } = await confirmSetupIntent(siClientSecret, {
+          paymentMethodType: 'Card',
+          paymentMethodData: {
+            billingDetails: {
+              name: `${pax.firstName} ${pax.lastName}`.trim(),
+              email: pax.email || undefined,
+            },
+          },
         });
-        router.replace({ pathname: '/(app)/bookings/success', params: { ref: res.data.booking_reference ?? res.data.id } });
+
+        if (siError) throw new Error(siError.message ?? 'Card verification failed');
+        if (!setupIntent || setupIntent.status !== 'Succeeded') {
+          throw new Error('Card verification failed. Please try again.');
+        }
+
+        const booking = await createBooking(undefined, setupIntent.id);
+        navigateSuccess(booking);
+      } else {
+        // Guest: createPaymentMethod (no setup intent needed for guest)
+        await handlePayWithCreatePM(false);
       }
     } catch (e: any) {
-      Alert.alert('Booking Failed', e.response?.data?.message ?? 'Please try again');
+      Alert.alert('Booking Failed', e?.response?.data?.message ?? e?.message ?? 'Please try again');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fallback / guest path: createPaymentMethod (no card saving)
+  const handlePayWithCreatePM = async (isLoggedIn: boolean) => {
+    const { paymentMethod, error } = await createPaymentMethod({
+      paymentMethodType: 'Card',
+      paymentMethodData: {
+        billingDetails: { name: `${pax.firstName} ${pax.lastName}`.trim() },
+      },
+    });
+    if (error || !paymentMethod) throw new Error(error?.message ?? 'Card setup failed');
+    const booking = await createBooking(paymentMethod.id);
+    navigateSuccess(booking);
   };
 
   const totalFare = quoteResult.estimated_total_minor ?? 0;
@@ -141,6 +222,14 @@ export default function CheckoutScreen() {
               <Text style={styles.carName}>{quoteResult.car_type_name ?? quoteResult.service_class_name}</Text>
               <Text style={styles.route} numberOfLines={2}>{formData.pickup} → {formData.dropoff}</Text>
               <Text style={styles.pickup}>📅 {formData.date} {formData.time}</Text>
+              {formData.isReturnTrip && formData.returnDate && (
+                <Text style={styles.pickup}>↩ Return: {formData.returnDate} {formData.returnTime}</Text>
+              )}
+              {(formData.waypoints?.filter(Boolean)?.length ?? 0) > 0 && (
+                <Text style={styles.pickup}>
+                  📍 {formData.waypoints.filter(Boolean).length} stop{formData.waypoints.filter(Boolean).length > 1 ? 's' : ''}
+                </Text>
+              )}
               <View style={styles.divider} />
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total</Text>
@@ -201,9 +290,16 @@ export default function CheckoutScreen() {
 
             <TouchableOpacity style={[styles.btn, loading && { opacity: 0.7 }]} onPress={handlePay} disabled={loading}>
               {loading ? <ActivityIndicator color="#000" /> : (
-                <Text style={styles.btnText}>Pay {fmtMoney(totalFare, quoteResult.currency)}</Text>
+                <Text style={styles.btnText}>
+                  {selectedCard && !useNewCard ? 'Confirm Booking' : 'Add Card & Confirm'} — {fmtMoney(totalFare, quoteResult.currency)}
+                </Text>
               )}
             </TouchableOpacity>
+
+            <Text style={styles.disclaimer}>
+              Payment is confirmed. Your chauffeur will be assigned before your pickup time.
+              Fare is based on confirmed quote. Toll/parking charges apply separately.
+            </Text>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -235,5 +331,6 @@ const styles = StyleSheet.create({
   radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: GOLD },
   card: { height: 54, marginBottom: 4 },
   btn: { backgroundColor: GOLD, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
-  btnText: { color: '#000', fontSize: 17, fontWeight: '700' },
+  btnText: { color: '#000', fontSize: 16, fontWeight: '700' },
+  disclaimer: { fontSize: 11, color: MUTED, textAlign: 'center', marginTop: 12, lineHeight: 16 },
 });

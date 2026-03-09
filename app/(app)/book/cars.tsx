@@ -1,3 +1,17 @@
+/**
+ * ⚠️ ARCHIVED — NOT USED IN ANY NAVIGATION FLOW
+ *
+ * This screen was an early multi-step quote flow (index → cars → checkout).
+ * It was superseded by the inline car selection inside book/index.tsx.
+ *
+ * Known issues (NOT fixed — screen is dead):
+ * - Reads `session_id`/`quote_session_id` instead of `quote_id` (API key mismatch)
+ * - Field names `car_type_id`, `base_fare_minor`, `toll_minor` do not exist in quote API
+ * - No route in expo-router navigates here
+ *
+ * Safe to delete when confirmed no external deep links reference this route.
+ * DO NOT add features here.
+ */
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';

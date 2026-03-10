@@ -4,9 +4,9 @@ import {
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView, Image, ActionSheetIOS,
 } from 'react-native';
 
-const LOGO_URL = process.env.EXPO_PUBLIC_LOGO_URL ?? null;
 const LOCAL_LOGO = require('../assets/logo.png');
 import { router } from 'expo-router';
+import { useTheme } from '../src/context/ThemeContext';
 import { loginWithEmail, loginWithOtp, fetchAndStoreUser } from '../src/lib/auth';
 import { registerPushToken } from '../src/lib/notifications';
 import * as SecureStore from 'expo-secure-store';
@@ -29,6 +29,7 @@ const COUNTRY_CODES = [
 type Tab = 'email' | 'email-otp' | 'sms-otp';
 
 export default function LoginScreen() {
+  const { companyName, logoUrl, primaryColor } = useTheme();
   const [tab, setTab] = useState<Tab>('email');
 
   // Email/password
@@ -136,8 +137,12 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
-          <Image source={LOGO_URL ? { uri: LOGO_URL } : LOCAL_LOGO} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.title}>Welcome Back</Text>
+          <Image
+            source={logoUrl ? { uri: logoUrl } : LOCAL_LOGO}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.title}>{companyName}</Text>
           <Text style={styles.subtitle}>Sign in to your account</Text>
         </View>
 

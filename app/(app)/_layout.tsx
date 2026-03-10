@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { GOLD } from '../../src/lib/format';
 import { setUnauthorizedHandler } from '../../src/lib/api';
+import { useTheme } from '../../src/context/ThemeContext';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -20,6 +21,7 @@ export default function AppLayout() {
   const queryClient = useQueryClient();
   const notifRef    = useRef<any>();
   const responseRef = useRef<any>();
+  const { primaryColor } = useTheme(); // tenant brand accent color
 
   useEffect(() => {
     // Register 401 handler — redirect to login when auth token expires
@@ -45,8 +47,9 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        // 1:1 ASDriverNative: .tint(.brandGold)
-        tabBarActiveTintColor: GOLD,
+        // Tenant primary color for active tab tint — from ThemeContext.
+        // Falls back to GOLD if theme not yet loaded.
+        tabBarActiveTintColor: primaryColor || GOLD,
         tabBarInactiveTintColor: '#6B7280',
         tabBarStyle: {
           backgroundColor: '#1A1A2E',
@@ -70,7 +73,7 @@ export default function AppLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ focused, size }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={focused ? (primaryColor || GOLD) : '#6B7280'} />
           ),
         }}
       />
@@ -79,7 +82,7 @@ export default function AppLayout() {
         options={{
           title: 'Jobs',
           tabBarIcon: ({ focused, size }) => (
-            <Ionicons name={focused ? 'list-circle' : 'list-circle-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
+            <Ionicons name={focused ? 'list-circle' : 'list-circle-outline'} size={size} color={focused ? (primaryColor || GOLD) : '#6B7280'} />
           ),
         }}
       />
@@ -88,7 +91,7 @@ export default function AppLayout() {
         options={{
           title: 'Book',
           tabBarIcon: ({ focused, size }) => (
-            <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
+            <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} size={size} color={focused ? (primaryColor || GOLD) : '#6B7280'} />
           ),
           // Tab bar hidden on book screen — matches web /quote (no bottom nav)
           tabBarStyle: { display: 'none' }, 
@@ -99,7 +102,7 @@ export default function AppLayout() {
         options={{
           title: 'Invoices',
           tabBarIcon: ({ focused, size }) => (
-            <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
+            <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={size} color={focused ? (primaryColor || GOLD) : '#6B7280'} />
           ),
         }}
       />
@@ -108,7 +111,7 @@ export default function AppLayout() {
         options={{
           title: 'More',
           tabBarIcon: ({ focused, size }) => (
-            <Ionicons name={focused ? 'ellipsis-horizontal-circle' : 'ellipsis-horizontal-circle-outline'} size={size} color={focused ? GOLD : '#6B7280'} />
+            <Ionicons name={focused ? 'ellipsis-horizontal-circle' : 'ellipsis-horizontal-circle-outline'} size={size} color={focused ? (primaryColor || GOLD) : '#6B7280'} />
           ),
         }}
       />

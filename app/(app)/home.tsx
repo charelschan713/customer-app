@@ -10,27 +10,20 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import api from '../../src/lib/api';
 import { getStoredUser } from '../../src/lib/auth';
-import { BG, CARD, CARD_ELEVATED, BORDER, TEXT, SUB, MUTED, GOLD, SUCCESS, WARNING, ERROR, BLUE, fmtMoney, fmtDate } from '../../src/lib/format';
+import { BG, CARD, CARD_ELEVATED, BORDER, TEXT, SUB, MUTED, GOLD, fmtMoney, fmtDate } from '../../src/lib/format';
+import { OP_STATUS_CONFIG } from '../../src/lib/booking-status';
 
 const LOCAL_LOGO = require('../../assets/logo.png');
 
-// ── Status badge — matches web StatusBadge ─────────────────────────────────
-const STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  CONFIRMED:                     { label: 'Confirmed',        color: '#166534', bg: '#dcfce7' },
-  PENDING_CUSTOMER_CONFIRMATION: { label: 'Awaiting Payment', color: '#92400e', bg: '#fef3c7' },
-  PENDING:                       { label: 'Pending',          color: '#92400e', bg: '#fef3c7' },
-  ASSIGNED:                      { label: 'Driver Assigned',  color: '#1e40af', bg: '#dbeafe' },
-  IN_PROGRESS:                   { label: 'In Progress',      color: '#5b21b6', bg: '#ede9fe' },
-  COMPLETED:                     { label: 'Completed',        color: '#6b7280', bg: '#f3f4f6' },
-  CANCELLED:                     { label: 'Cancelled',        color: '#991b1b', bg: '#fee2e2' },
-  NO_SHOW:                       { label: 'No Show',          color: '#991b1b', bg: '#fee2e2' },
-};
-
+// ── Status badge — uses shared OP_STATUS_CONFIG (dark-bg optimised) ────────
 function StatusBadge({ status }: { status: string }) {
-  const s = STATUS[status] ?? { label: status?.replace(/_/g, ' ') ?? '', color: '#6b7280', bg: '#f3f4f6' };
+  const cfg = OP_STATUS_CONFIG[status];
+  const label = cfg?.label ?? status?.replace(/_/g, ' ') ?? '';
+  const color = cfg?.color ?? '#9CA3AF';
+  const bg    = cfg?.bg    ?? 'rgba(156,163,175,0.12)';
   return (
-    <View style={[styles.badge, { backgroundColor: s.bg }]}>
-      <Text style={[styles.badgeText, { color: s.color }]}>{s.label}</Text>
+    <View style={[styles.badge, { backgroundColor: bg }]}>
+      <Text style={[styles.badgeText, { color }]}>{label}</Text>
     </View>
   );
 }
@@ -269,9 +262,18 @@ export default function HomeScreen() {
         {/* Empty state */}
         {!isLoading && upcoming.length === 0 && past.length === 0 && (
           <View style={styles.empty}>
-            <Ionicons name="car-outline" size={52} color={MUTED + '66'} />
-            <Text style={styles.emptyTitle}>No trips yet</Text>
-            <Text style={styles.emptySub}>Tap Book to get started</Text>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="car-outline" size={32} color={GOLD + 'CC'} />
+            </View>
+            <Text style={styles.emptyTitle}>No bookings yet</Text>
+            <Text style={styles.emptySub}>Your upcoming and past trips will appear here.</Text>
+            <TouchableOpacity
+              style={styles.emptyBtn}
+              onPress={() => router.push('/(app)/book')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.emptyBtnText}>Book Your First Ride</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -366,7 +368,10 @@ const styles = StyleSheet.create({
   darkPrice: { fontSize: 15, fontWeight: '700', color: GOLD },
 
   // Empty state
-  empty:     { alignItems: 'center', paddingVertical: 80, gap: 10 },
-  emptyTitle:{ fontSize: 16, fontWeight: '700', color: TEXT },
-  emptySub:  { fontSize: 13, color: MUTED },
+  empty:        { alignItems: 'center', paddingVertical: 64, gap: 12 },
+  emptyIcon:    { width: 72, height: 72, borderRadius: 36, backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  emptyTitle:   { fontSize: 17, fontWeight: '700', color: TEXT },
+  emptySub:     { fontSize: 13, color: MUTED, textAlign: 'center', paddingHorizontal: 32, lineHeight: 19 },
+  emptyBtn:     { marginTop: 8, backgroundColor: GOLD, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32 },
+  emptyBtnText: { color: '#1A1A2E', fontSize: 14, fontWeight: '700' },
 });

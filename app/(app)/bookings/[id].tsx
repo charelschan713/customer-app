@@ -12,11 +12,6 @@ import {
   TERMINAL_STATUSES,
 } from '../../../src/lib/booking-status';
 
-// Derive STATUS_COLOR map from shared config for backward compat
-const STATUS_COLOR: Record<string, string> = Object.fromEntries(
-  Object.entries(OP_STATUS_CONFIG).map(([k, v]) => [k, v.color])
-);
-
 export default function BookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -69,7 +64,9 @@ export default function BookingDetailScreen() {
     </SafeAreaView>
   );
 
-  const statusColor = STATUS_COLOR[booking.operational_status] ?? '#888';
+  const statusCfg   = OP_STATUS_CONFIG[booking.operational_status];
+  const statusColor = statusCfg?.color ?? '#888';
+  const statusLabel = statusCfg?.label ?? booking.operational_status?.replace(/_/g, ' ') ?? '';
   const driverStatus = booking.assignments?.[0]?.driver_execution_status;
 
   return (
@@ -84,7 +81,7 @@ export default function BookingDetailScreen() {
         {/* Status */}
         <View style={[styles.statusBanner, { backgroundColor: statusColor + '18', borderColor: statusColor + '40' }]}>
           <Text style={[styles.statusText, { color: statusColor }]}>
-            {booking.operational_status?.replace(/_/g, ' ')}
+            {statusLabel}
           </Text>
           {driverStatus && DRIVER_EXEC_STATUS[driverStatus] && (
             <Text style={styles.driverStatus}>

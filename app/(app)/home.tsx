@@ -11,6 +11,7 @@ import * as Haptics from 'expo-haptics';
 import api from '../../src/lib/api';
 import { getStoredUser } from '../../src/lib/auth';
 import { BG, CARD, CARD_ELEVATED, BORDER, TEXT, SUB, MUTED, GOLD, fmtMoney, fmtDate } from '../../src/lib/format';
+import { useTheme } from '../../src/context/ThemeContext';
 import { OP_STATUS_CONFIG } from '../../src/lib/booking-status';
 
 const LOCAL_LOGO = require('../../assets/logo.png');
@@ -29,7 +30,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ── Dark booking card — 1:1 web DarkBookingCard (upcoming) ─────────────────
-function DarkCard({ booking: b, index, onPress }: { booking: any; index: number; onPress: () => void }) {
+function DarkCard({ booking: b, index, onPress, accentColor }: { booking: any; index: number; onPress: () => void; accentColor: string }) {
   const anim  = useRef(new Animated.Value(0)).current;
   const oAnim = useRef(new Animated.Value(0)).current;
 
@@ -81,7 +82,7 @@ function DarkCard({ booking: b, index, onPress }: { booking: any; index: number;
           </View>
           <View style={styles.rowLeft}>
             {Number(b.total_price_minor) > 0 && (
-              <Text style={styles.goldPrice}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
+              <Text style={[styles.goldPrice, { color: accentColor }]}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
             )}
             <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
           </View>
@@ -92,7 +93,7 @@ function DarkCard({ booking: b, index, onPress }: { booking: any; index: number;
 }
 
 // ── Light booking card — 1:1 web LightBookingCard (past) ───────────────────
-function LightCard({ booking: b, index, onPress }: { booking: any; index: number; onPress: () => void }) {
+function LightCard({ booking: b, index, onPress, accentColor }: { booking: any; index: number; onPress: () => void; accentColor: string }) {
   const anim  = useRef(new Animated.Value(0)).current;
   const oAnim = useRef(new Animated.Value(0)).current;
 
@@ -144,7 +145,7 @@ function LightCard({ booking: b, index, onPress }: { booking: any; index: number
           </View>
           <View style={styles.rowLeft}>
             {Number(b.total_price_minor) > 0 && (
-              <Text style={styles.darkPrice}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
+              <Text style={[styles.darkPrice, { color: accentColor }]}>{fmtMoney(b.total_price_minor, b.currency)}</Text>
             )}
             <Ionicons name="chevron-forward" size={14} color="#D1D5DB" />
           </View>
@@ -177,6 +178,10 @@ function SkeletonCard() {
 
 // ── Main screen ──────────────────────────────────────────────────────────────
 export default function HomeScreen() {
+  // Tenant primary color — falls back to GOLD if ThemeContext not yet loaded
+  const { primaryColor } = useTheme();
+  const P = primaryColor || GOLD;
+
   const [user, setUser] = useState<any>(null);
   useEffect(() => { getStoredUser().then(setUser); }, []);
 
@@ -231,7 +236,7 @@ export default function HomeScreen() {
           </View>
         </View>
         {/* Avatar — gold circle (ASDriver) */}
-        <TouchableOpacity style={styles.avatarBtn} onPress={() => router.push('/(app)/profile')} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.avatarBtn, { backgroundColor: P }]} onPress={() => router.push('/(app)/profile')} activeOpacity={0.8}>
           <Text style={styles.avatarText}>{(firstName[0] ?? '?').toUpperCase()}</Text>
         </TouchableOpacity>
       </View>
@@ -239,14 +244,14 @@ export default function HomeScreen() {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={GOLD} />}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={P} />}
       >
         {/* Skeleton */}
         {isLoading && [0, 1].map(i => <SkeletonCard key={i} />)}
 
         {/* Upcoming — dark cards (web: DarkBookingCard) */}
         {!isLoading && upcoming.map((b: any, i: number) => (
-          <DarkCard key={b.id} booking={b} index={i} onPress={() => router.push(`/(app)/bookings/${b.id}`)} />
+          <DarkCard key={b.id} booking={b} index={i} onPress={() => router.push(`/(app)/bookings/${b.id}`)} accentColor={P} />
         ))}
 
         {/* Past section — "Past Trips" header + light cards (web: LightBookingCard) */}
@@ -254,7 +259,7 @@ export default function HomeScreen() {
           <>
             <Text style={styles.sectionHeader}>Past Trips</Text>
             {past.map((b: any, i: number) => (
-              <LightCard key={b.id} booking={b} index={i} onPress={() => router.push(`/(app)/bookings/${b.id}`)} />
+              <LightCard key={b.id} booking={b} index={i} onPress={() => router.push(`/(app)/bookings/${b.id}`)} accentColor={P} />
             ))}
           </>
         )}
@@ -263,12 +268,12 @@ export default function HomeScreen() {
         {!isLoading && upcoming.length === 0 && past.length === 0 && (
           <View style={styles.empty}>
             <View style={styles.emptyIcon}>
-              <Ionicons name="car-outline" size={32} color={GOLD + 'CC'} />
+              <Ionicons name="car-outline" size={32} color={P + 'CC'} />
             </View>
             <Text style={styles.emptyTitle}>No bookings yet</Text>
             <Text style={styles.emptySub}>Your upcoming and past trips will appear here.</Text>
             <TouchableOpacity
-              style={styles.emptyBtn}
+              style={[styles.emptyBtn, { backgroundColor: P }]}
               onPress={() => router.push('/(app)/book')}
               activeOpacity={0.8}
             >

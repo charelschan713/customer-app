@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../../src/lib/api';
 import { BG, CARD, GOLD, BORDER, TEXT, MUTED, fmtMoney, fmtDate } from '../../../src/lib/format';
+import { useTheme } from '../../../src/context/ThemeContext';
 import {
   OP_STATUS_CONFIG,
   DRIVER_EXEC_STATUS,
@@ -13,6 +14,9 @@ import {
 } from '../../../src/lib/booking-status';
 
 export default function BookingDetailScreen() {
+  const { primaryColor } = useTheme();
+  const P = primaryColor || GOLD;
+
   const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
 
@@ -49,14 +53,14 @@ export default function BookingDetailScreen() {
 
   if (isLoading) return (
     <View style={{ flex: 1, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator color={GOLD} size="large" />
+      <ActivityIndicator color={P} size="large" />
     </View>
   );
 
   if (!booking) return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
       <TouchableOpacity style={{ padding: 20 }} onPress={() => router.back()}>
-        <Text style={{ color: GOLD }}>← Back</Text>
+        <Text style={{ color: P }}>← Back</Text>
       </TouchableOpacity>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Text style={{ color: MUTED }}>Booking not found</Text>
@@ -104,7 +108,7 @@ export default function BookingDetailScreen() {
 
         {/* Trip info */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>TRIP DETAILS</Text>
+          <Text style={[styles.cardTitle, { color: P }]}>TRIP DETAILS</Text>
           <Row label="Date & Time" value={fmtDate(booking.pickup_at_utc)} />
           <Row label="Vehicle" value={booking.car_type_name ?? booking.service_class_name} />
           <Row label="Passengers" value={`${booking.passenger_count} pax`} />
@@ -114,7 +118,7 @@ export default function BookingDetailScreen() {
 
         {/* Route */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>ROUTE</Text>
+          <Text style={[styles.cardTitle, { color: P }]}>ROUTE</Text>
           <TouchableOpacity style={styles.addrRow} onPress={() => Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(booking.pickup_address_text)}`)}>
             <View style={[styles.dot, { backgroundColor: '#22c55e' }]} />
             <View style={{ flex: 1 }}>
@@ -125,7 +129,7 @@ export default function BookingDetailScreen() {
           </TouchableOpacity>
           {booking.dropoff_address_text && (
             <TouchableOpacity style={styles.addrRow} onPress={() => Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(booking.dropoff_address_text)}`)}>
-              <View style={[styles.dot, { backgroundColor: GOLD }]} />
+              <View style={[styles.dot, { backgroundColor: P }]} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.addrLabel}>Drop-off</Text>
                 <Text style={styles.addrText}>{booking.dropoff_address_text}</Text>
@@ -138,7 +142,7 @@ export default function BookingDetailScreen() {
         {/* Driver info */}
         {booking.assignments?.[0] && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>YOUR CHAUFFEUR</Text>
+            <Text style={[styles.cardTitle, { color: P }]}>YOUR CHAUFFEUR</Text>
             <Row label="Name" value={booking.assignments[0].driver_name ?? 'Assigned'} />
             {booking.assignments[0].driver_phone && (
               <TouchableOpacity onPress={() => Linking.openURL(`tel:${booking.assignments[0].driver_phone}`)}>
@@ -155,21 +159,21 @@ export default function BookingDetailScreen() {
 
         {/* Pricing */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>PRICING</Text>
+          <Text style={[styles.cardTitle, { color: P }]}>PRICING</Text>
           {booking.prepay_base_fare_minor > 0 && <Row label="Base Fare" value={fmtMoney(booking.prepay_base_fare_minor, booking.currency)} />}
           {booking.prepay_toll_minor > 0 && <Row label="Tolls" value={fmtMoney(booking.prepay_toll_minor, booking.currency)} />}
           {booking.prepay_parking_minor > 0 && <Row label="Parking" value={fmtMoney(booking.prepay_parking_minor, booking.currency)} />}
           {booking.discount_total_minor > 0 && <Row label="Discount" value={`−${fmtMoney(booking.discount_total_minor, booking.currency)}`} color="#22c55e" />}
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total Paid</Text>
-            <Text style={styles.totalVal}>{fmtMoney(booking.total_price_minor, booking.currency)}</Text>
+            <Text style={[styles.totalVal, { color: P }]}>{fmtMoney(booking.total_price_minor, booking.currency)}</Text>
           </View>
         </View>
 
         {/* Actions */}
         <View style={{ gap: 10, marginTop: 8 }}>
           {CUSTOMER_CONFIRMABLE_STATUSES.includes(booking.operational_status as any) && (
-            <TouchableOpacity style={styles.confirmBtn} onPress={() => confirmMutation.mutate()} disabled={confirmMutation.isPending}>
+            <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: P }]} onPress={() => confirmMutation.mutate()} disabled={confirmMutation.isPending}>
               {confirmMutation.isPending ? <ActivityIndicator color="#000" /> : <Text style={styles.confirmBtnText}>✓ Confirm Booking</Text>}
             </TouchableOpacity>
           )}
